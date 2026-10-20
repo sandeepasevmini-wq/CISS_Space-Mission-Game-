@@ -181,8 +181,9 @@ async function loadGlobalLeaderboard() {
         list.slice(0, 10).forEach((entry, index) => {
             const row = document.createElement('tr');
             
-            let flagCode = entry.country ? entry.country.toLowerCase().trim() : 'af';
-            let flagUrl = zipFlagCache[flagCode] || '';
+let flagCode = entry.country ? entry.country.toLowerCase().trim() : 'af';
+            // Check both clean name and with '-flag' suffix
+            let flagUrl = zipFlagCache[flagCode] || zipFlagCache[flagCode + '-flag'] || '';
 
             row.innerHTML = `
                 <td>#${index + 1}</td>
