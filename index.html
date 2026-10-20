@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en" style="position: relative; margin: 0;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Mission Systems Architect</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="position: relative; margin: 0;">
+<!-- STATIONARY TOP-RIGHT INSTITUTE LOGO (SHARP & NATURAL) -->
+    <div style="position: absolute; top: 15px; right: 20px; z-index: 1000;">
+        <img src="ciss-logo.png" alt="CISS Logo" style="height: 85px; width: auto; display: block;">
+    </div>
+
+    <!-- Dynamic Space Background -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- PILOT COCKPIT INITIALIZATION LOADING SCREEN -->
+    <div id="loader-screen">
+        <div class="cockpit-background"></div>
+        <div class="hud-scanner"></div>
+
+        <div class="loader-content">
+            <div class="hud-header">
+                <span class="hud-tag">PRIMARY FLIGHT DECK // IDLE STATUS</span>
+                <div class="hud-spinner"></div>
+            </div>
+            <h2>WARP INITIALIZATION & CHECKLIST</h2>
+            
+            <!-- PRESS TO START BUTTON -->
+            <button id="start-loader-btn" onclick="startLoadingSequence();" style="margin: 20px 0; background: #238636; border: 1px solid #2ea043; color: white; padding: 12px 28px; font-family: monospace; font-weight: bold; font-size: 1rem; border-radius: 4px; cursor: pointer; letter-spacing: 2px; box-shadow: 0 0 10px rgba(35, 134, 54, 0.5);">
+                ▶ PRESS TO START
+            </button>
+
+            <div class="progress-bar-container">
+                <div id="progress-bar"></div>
+            </div>
+
+            <div class="loader-telemetry">
+                <span id="loader-status">AWAITING PILOT COMMAND...</span>
+                <span id="loader-percent">0%</span>
+            </div>
+        </div>
+    </div>
+
+<!-- MISSION WELCOME BRIEFING MODAL -->
+    <div id="welcome-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 4, 8, 0.9); display: none; align-items: center; justify-content: center; z-index: 2000; font-family: monospace;">
+        <div style="background: #0d1117; border: 1px solid #30363d; padding: 30px; border-radius: 8px; max-width: 450px; text-align: center; box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);">
+            <h3 style="color: #58a6ff; margin-bottom: 15px; font-size: 1.2rem; letter-spacing: 1px;">MISSION BRIEFING</h3>
+            <p style="color: #c9d1d9; font-size: 0.9rem; line-height: 1.6; margin-bottom: 25px;">
+                Design interplanetary spacecraft within budget and mass limits to complete deep-space missions and overcome the challenges along your journey.
+            </p>
+            <button onclick="closeWelcomeModal(); playClick();" style="background: #238636; border: 1px solid #2ea043; color: white; padding: 10px 24px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; letter-spacing: 1px;">
+                ACCEPT MISSION
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN GAME DASHBOARD HEADER -->
+    <header style="text-align: center; padding: 25px 20px;">
+        <h1>SPACE MISSION SYSTEMS ARCHITECT</h1>
+        <p class="subtitle">INTERPLANETARY SYSTEMS ENGINEERING & TRADE-OFF SIMULATION</p>
+    </header>
+
+    <main class="dashboard">
+        <!-- Control Panel Column -->
+        <section class="controls">
+            <h2>1. SELECT TARGET DESTINATION</h2>
+            <div class="mission-selection">
+                <button class="target-card active" onclick="selectTarget('Europa', this); playClick();">
+                    <img src="europa.jpg" alt="Europa Moon">
+                    <span>Europa (Jupiter)</span>
+                </button>
+                <button class="target-card" onclick="selectTarget('Titan', this); playClick();">
+                    <img src="titan.jpg" alt="Titan Moon">
+                    <span>Titan (Saturn)</span>
+                </button>
+            </div>
+            
+            <div class="objective-card">
+                <p id="target-display">Selected Target: Europa (Jupiter) | Distance: 5.2 AU</p>
+            </div>
+
+            <h2>2. TRAJECTORY & FLIGHT PLAN</h2>
+            <div class="setting">
+                <label for="route-select">FLIGHT ROUTE:</label>
+                <select id="route-select" onchange="updateSettings(); playClick();">
+                    <option value="Direct">Direct Flight (Fast Transit | Standard Fuel)</option>
+                    <option value="GravityAssist">Gravity Assist Flyby (Slow Transit | Save Mass/Budget)</option>
+                </select>
+            </div>
+
+            <h2>3. PILOT CALLSIGN & METRICS</h2>
+            <div class="tracker-box">
+                <div class="pilot-input-group">
+                    <label for="player-name-input">PILOT CALLSIGN & COUNTRY:</label>
+                    <div class="pilot-fields" style="display: flex; align-items: center; gap: 8px;">
+                        <!-- Selected Flag Icon Preview -->
+                        <img id="selected-flag-preview" src="flags/af-flag.png" alt="Flag Preview" style="width: 24px; height: 18px; border-radius: 2px; object-fit: cover;">
+                        
+                        <!-- 150 COUNTRIES IN ALPHABETICAL ORDER -->
+                        <select id="player-flag-select" onchange="updateFlagPreview();">
+                            <option value="af">Afghanistan</option>
+                            <option value="al">Albania</option>
+                            <option value="dz">Algeria</option>
+                            <option value="ad">Andorra</option>
+                            <option value="ao">Angola</option>
+                            <option value="ag">Antigua & Barbuda</option>
+                            <option value="ar">Argentina</option>
+                            <option value="am">Armenia</option>
+                            <option value="au">Australia</option>
+                            <option value="at">Austria</option>
+                            <option value="az">Azerbaijan</option>
+                            <option value="bs">Bahamas</option>
+                            <option value="bh">Bahrain</option>
+                            <option value="bd">Bangladesh</option>
+                            <option value="bb">Barbados</option>
+                            <option value="by">Belarus</option>
+                            <option value="be">Belgium</option>
+                            <option value="bz">Belize</option>
+                            <option value="bj">Benin</option>
+                            <option value="bt">Bhutan</option>
+                            <option value="bo">Bolivia</option>
+                            <option value="ba">Bosnia & Herzegovina</option>
+                            <option value="bw">Botswana</option>
+                            <option value="br">Brazil</option>
+                            <option value="bn">Brunei</option>
+                            <option value="bg">Bulgaria</option>
+                            <option value="bf">Burkina Faso</option>
+                            <option value="bi">Burundi</option>
+                            <option value="kh">Cambodia</option>
+                            <option value="cm">Cameroon</option>
+                            <option value="ca">Canada</option>
+                            <option value="cv">Cape Verde</option>
+                            <option value="cf">Central African Republic</option>
+                            <option value="td">Chad</option>
+                            <option value="cl">Chile</option>
+                            <option value="cn">China</option>
+                            <option value="co">Colombia</option>
+                            <option value="km">Comoros</option>
+                            <option value="cg">Congo</option>
+                            <option value="cr">Costa Rica</option>
+                            <option value="hr">Croatia</option>
+                            <option value="cu">Cuba</option>
+                            <option value="cy">Cyprus</option>
+                            <option value="cz">Czech Republic</option>
+                            <option value="dk">Denmark</option>
+                            <option value="dj">Djibouti</option>
+                            <option value="dm">Dominica</option>
+                            <option value="do">Dominican Republic</option>
+                            <option value="ec">Ecuador</option>
+                            <option value="eg">Egypt</option>
+                            <option value="sv">El Salvador</option>
+                            <option value="ee">Estonia</option>
+                            <option value="et">Ethiopia</option>
+                            <option value="fj">Fiji</option>
+                            <option value="fi">Finland</option>
+                            <option value="fr">France</option>
+                            <option value="ga">Gabon</option>
+                            <option value="gm">Gambia</option>
+                            <option value="ge">Georgia</option>
+                            <option value="de">Germany</option>
+                            <option value="gh">Ghana</option>
+                            <option value="gr">Greece</option>
+                            <option value="gd">Grenada</option>
+                            <option value="gt">Guatemala</option>
+                            <option value="gn">Guinea</option>
+                            <option value="gy">Guyana</option>
+                            <option value="ht">Haiti</option>
+                            <option value="hn">Honduras</option>
+                            <option value="hk">Hong Kong</option>
+                            <option value="hu">Hungary</option>
+                            <option value="is">Iceland</option>
+                            <option value="in">India</option>
+                            <option value="id">Indonesia</option>
+                            <option value="ir">Iran</option>
+                            <option value="iq">Iraq</option>
+                            <option value="ie">Ireland</option>
+                            <option value="il">Israel</option>
+                            <option value="it">Italy</option>
+                            <option value="jm">Jamaica</option>
+                            <option value="jp">Japan</option>
+                            <option value="jo">Jordan</option>
+                            <option value="kz">Kazakhstan</option>
+                            <option value="ke">Kenya</option>
+                            <option value="kw">Kuwait</option>
+                            <option value="kg">Kyrgyzstan</option>
+                            <option value="la">Laos</option>
+                            <option value="lv">Latvia</option>
+                            <option value="lb">Lebanon</option>
+                            <option value="ls">Lesotho</option>
+                            <option value="lr">Liberia</option>
+                            <option value="ly">Libya</option>
+                            <option value="lt">Lithuania</option>
+                            <option value="lu">Luxembourg</option>
+                            <option value="mg">Madagascar</option>
+                            <option value="mw">Malawi</option>
+                            <option value="my">Malaysia</option>
+                            <option value="mv">Maldives</option>
+                            <option value="ml">Mali</option>
+                            <option value="mt">Malta</option>
+                            <option value="mr">Mauritania</option>
+                            <option value="mu">Mauritius</option>
+                            <option value="mx">Mexico</option>
+                            <option value="md">Moldova</option>
+                            <option value="mc">Monaco</option>
+                            <option value="mn">Mongolia</option>
+                            <option value="me">Montenegro</option>
+                            <option value="ma">Morocco</option>
+                            <option value="mz">Mozambique</option>
+                            <option value="mm">Myanmar</option>
+                            <option value="na">Namibia</option>
+                            <option value="np">Nepal</option>
+                            <option value="nl">Netherlands</option>
+                            <option value="nz">New Zealand</option>
+                            <option value="ni">Nicaragua</option>
+                            <option value="ne">Niger</option>
+                            <option value="ng">Nigeria</option>
+                            <option value="kp">North Korea</option>
+                            <option value="mk">North Macedonia</option>
+                            <option value="no">Norway</option>
+                            <option value="om">Oman</option>
+                            <option value="pk">Pakistan</option>
+                            <option value="ps">Palestine</option>
+                            <option value="pa">Panama</option>
+                            <option value="pg">Papua New Guinea</option>
+                            <option value="py">Paraguay</option>
+                            <option value="pe">Peru</option>
+                            <option value="ph">Philippines</option>
+                            <option value="pl">Poland</option>
+                            <option value="pt">Portugal</option>
+                            <option value="qa">Qatar</option>
+                            <option value="ro">Romania</option>
+                            <option value="ru">Russia</option>
+                            <option value="rw">Rwanda</option>
+                            <option value="sa">Saudi Arabia</option>
+                            <option value="sn">Senegal</option>
+                            <option value="rs">Serbia</option>
+                            <option value="sg">Singapore</option>
+                            <option value="sk">Slovakia</option>
+                            <option value="si">Slovenia</option>
+                            <option value="so">Somalia</option>
+                            <option value="za">South Africa</option>
+                            <option value="kr">South Korea</option>
+                            <option value="es">Spain</option>
+                            <option value="lk">Sri Lanka</option>
+                            <option value="sd">Sudan</option>
+                            <option value="se">Sweden</option>
+                            <option value="ch">Switzerland</option>
+                            <option value="sy">Syria</option>
+                            <option value="tw">Taiwan</option>
+                            <option value="tj">Tajikistan</option>
+                            <option value="tz">Tanzania</option>
+                            <option value="th">Thailand</option>
+                            <option value="tn">Tunisia</option>
+                            <option value="tr">Turkey</option>
+                            <option value="tm">Turkmenistan</option>
+                            <option value="ug">Uganda</option>
+                            <option value="ua">Ukraine</option>
+                            <option value="ae">United Arab Emirates</option>
+                            <option value="gb">United Kingdom</option>
+                            <option value="us">United States</option>
+                            <option value="uy">Uruguay</option>
+                            <option value="uz">Uzbekistan</option>
+                            <option value="ve">Venezuela</option>
+                            <option value="vn">Vietnam</option>
+                            <option value="ye">Yemen</option>
+                            <option value="zm">Zambia</option>
+                            <option value="zw">Zimbabwe</option>
+                        </select>
+                        <input type="text" id="player-name-input" placeholder="Enter Callsign" value="Commander">
+                    </div>
+                </div>
+
+                <p style="margin-top: 10px;">REMAINING BUDGET: $<span id="budget-left">1000</span>M</p>
+                <p>PAYLOAD MASS: <span id="mass-used">0</span> kg / <span id="max-mass">1500</span> kg</p>
+                <p class="high-score-text">BEST LOCAL RECORD: <span id="high-score-val">0</span> PTS</p>
+            </div>
+
+            <h2>4. SPACECRAFT SYSTEMS DESIGN</h2>
+            <div class="setting">
+                <label for="launcher-select">LAUNCH VEHICLE:</label>
+                <select id="launcher-select" onchange="updateSettings(); playClick();">
+                    <option value="FalconHeavy">Falcon Heavy ($150M | Max 1500kg)</option>
+                    <option value="SLS">Space Launch System ($800M | Max 3000kg)</option>
+                </select>
+            </div>
+
+            <div class="setting">
+                <label for="power-select">POWER GENERATOR:</label>
+                <select id="power-select" onchange="updateSettings(); playClick();">
+                    <option value="Solar">Solar Arrays ($50M | 200kg | 200W)</option>
+                    <option value="RTG">Nuclear RTG ($200M | 150kg | 600W)</option>
+                </select>
+            </div>
+
+            <div class="setting">
+                <label for="comm-select">COMMUNICATIONS SYSTEM:</label>
+                <select id="comm-select" onchange="updateSettings(); playClick();">
+                    <option value="LGA">Low-Gain Antenna ($20M | 50kg | 10 kbps)</option>
+                    <option value="HGA">High-Gain Dish ($80M | 120kg | 500 kbps)</option>
+                    <option value="Laser">Laser Comms ($180M | 80kg | 5000 kbps)</option>
+                </select>
+            </div>
+
+            <div class="setting">
+                <label for="instrument-select">SCIENTIFIC PAYLOAD INSTRUMENT:</label>
+                <select id="instrument-select" onchange="updateSettings(); playClick();">
+                    <option value="Camera">Optical Imaging Camera ($40M | 60kg)</option>
+                    <option value="Radar">Ice-Penetrating Radar ($150M | 220kg)</option>
+                    <option value="Spectrometer">Mass Spectrometer ($110M | 100kg)</option>
+                </select>
+            </div>
+
+            <div class="setting">
+                <label for="shield-slider">RADIATION SHIELDING: <span id="shield-val">50</span>% ($<span id="shield-cost">100</span>M | <span id="shield-mass">250</span>kg)</label>
+                <input type="range" id="shield-slider" min="10" max="100" value="50" oninput="updateSettings();">
+            </div>
+
+            <button class="launch-btn" onclick="startMission(); playClick();">INITIALIZE LAUNCH SEQUENCE</button>
+        </section>
+
+        <!-- Simulation Viewport & Standalone Leaderboard Column -->
+        <section class="viewport">
+
+            <h2>5. ORBIT TELEMETRY & MISSION CONTROL</h2>
+            
+            <!-- Viewport Container for Canvas, Status Flash & Cutscene Video -->
+            <div class="viewport-container" style="position: relative; width: 420px; height: 320px; background: #020408; border-radius: 6px; overflow: hidden; border: 1px solid #30363d;">
+                <canvas id="spaceCanvas" width="420" height="320" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                
+                <!-- ARCADE STATUS OVERLAY -->
+                <div id="status-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(2, 4, 8, 0.85); z-index: 5; text-align: center; padding: 20px;">
+                    <h2 id="status-overlay-title" style="font-family: monospace; font-size: 1.8rem; letter-spacing: 2px; margin-bottom: 5px; text-shadow: 0 0 10px currentColor;">MISSION SUCCESSFUL</h2>
+                    <p id="status-overlay-sub" style="font-family: monospace; font-size: 0.85rem; color: #8b949e; letter-spacing: 1px;">UPLOADING TELEMETRY FEED...</p>
+                </div>
+
+                <!-- CUTSCENE VIDEO OVERLAY -->
+                <video id="debrief-video" width="420" height="320" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; object-fit: cover; z-index: 10;" playsinline></video>
+            </div>
+            
+            <!-- MID-FLIGHT EMERGENCY ANOMALY BANNER -->
+<div id="anomaly-alert" class="anomaly-box hidden">
+    <h4 id="anomaly-title">⚠️ INCOMING ANOMALY WARNING</h4>
+    <p id="anomaly-desc">Anomaly description goes here...</p>
+    <div class="anomaly-actions">
+        <button id="anomaly-btn-1" onclick="handleChallengeChoice(1); playClick();">ACTION 1</button>
+        <button id="anomaly-btn-2" onclick="handleChallengeChoice(2); playClick();">ACTION 2</button>
+    </div>
+</div>
+
+            <!-- DEBRIEF & SCIENTIFIC YIELD RESULT -->
+            <div id="debrief-box" class="debrief">
+                <h3>MISSION EVALUATION DEBRIEF</h3>
+                <p id="debrief-text">Target changed to Europa. Design systems to achieve: Confirm subsurface liquid ocean & evaluate habitability / biosignatures.</p>
+                <div id="score-display" class="score-card hidden">
+                    <p>SCIENCE YIELD SCORE: <strong id="current-score">0</strong> PTS</p>
+                    <p>MISSION GRADE: <span id="current-grade">N/A</span></p>
+                    
+                    <!-- LIVE SUBMISSION BUTTON -->
+                    <button id="submit-score-btn" onclick="submitLiveScore(); playClick();" style="margin-top: 10px; width: 100%; background: #238636; border: 1px solid #2ea043; color: white; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                        📡 TRANSMIT SCORE TO GLOBAL LEADERBOARD
+                    </button>
+                    <p id="submit-status" style="font-size: 0.75rem; color: #58a6ff; margin-top: 5px;"></p>
+                </div>
+            </div>
+
+            <!-- SEPARATE STANDALONE GLOBAL LEADERBOARD SECTION -->
+            <div class="leaderboard-card">
+                <h3>🏆 GLOBAL HALL OF FAME</h3>
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>FLAG</th>
+                            <th>PILOT</th>
+                            <th>TARGET</th>
+                            <th>SCORE</th>
+                            <th>GRADE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <tr><td colspan="6" style="text-align: center; color: #8b949e;">Loading Telemetry Records...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- INSTITUTE FOOTER & PLAYER REVIEWS -->
+    <footer style="margin-top: 50px; padding: 30px 20px; background: rgba(2, 4, 8, 0.95); border-top: 1px solid #30363d; font-family: monospace; color: #8b949e;">
+        <div style="max-width: 900px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 30px;">
+            
+            <!-- Institute Contact Information -->
+            <div style="flex: 1; min-width: 280px;">
+                <h3 style="color: #58a6ff; margin-bottom: 10px; font-size: 1rem;">CEYLON INSTITUTE OF SPACE SCIENCE (CISS)</h3>
+                <p style="font-size: 0.85rem; line-height: 1.5; margin-bottom: 8px;">📍 Educational Institution, Colombo, Sri Lanka</p>
+                <p style="font-size: 0.85rem; line-height: 1.5; margin-bottom: 8px;">📧 Email: ciss@ceylonspacescience.com | spathirana@ceylonspacescience.com</p>
+                <p style="font-size: 0.85rem; line-height: 1.5;">🌐 Web: https://sites.google.com/ceylonspacescience.com/ciss-space-science/home?pli=1&authuser=0</p>
+            </div>
+
+            <!-- Player Review & Comments Section -->
+            <div style="flex: 1; min-width: 280px;">
+                <h3 style="color: #58a6ff; margin-bottom: 10px; font-size: 1rem;">MISSION CONTROL FEEDBACK</h3>
+                <p style="font-size: 0.85rem; margin-bottom: 10px;">Leave your simulation review or telemetry comments:</p>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <input type="text" id="reviewer-name" placeholder="Commander Name" style="background: #0d1117; border: 1px solid #30363d; color: white; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 0.85rem;">
+                    <textarea id="review-comment" placeholder="Type your review here..." rows="2" style="background: #0d1117; border: 1px solid #30363d; color: white; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; resize: none;"></textarea>
+                    <button onclick="submitPlayerReview(); playClick();" style="background: #238636; border: 1px solid #2ea043; color: white; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; font-size: 0.85rem;">
+                        TRANSMIT REVIEW
+                    </button>
+                    <p id="review-status" style="font-size: 0.75rem; color: #58a6ff; margin: 0;"></p>
+                </div>
+            </div>
+
+        </div>
+        <div style="text-align: center; margin-top: 25px; font-size: 0.75rem; color: #484f58;">
+            © 2026 Ceylon Institute of Space Science. All Interplanetary Rights Reserved.
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
