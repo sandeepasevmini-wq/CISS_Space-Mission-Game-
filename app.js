@@ -27,14 +27,51 @@ function playClick() {
     audioClick.currentTime = 0;
     audioClick.play().catch(() => {});
 }
+let zipFlagCache = {};
+let zipLoaded = false;
 
+// Function to load and unzip flags.zip automatically when the game starts
+async function loadFlagsFromZip() {
+    if (zipLoaded) return;
+    try {
+        const response = await fetch('flags.zip');
+        const blob = await response.blob();
+        const zip = new JSZip();
+        const contents = await zip.loadAsync(blob);
+        
+        // Loop through every file inside the zip and store them in memory
+        for (let filename in contents.files) {
+            if (!contents.files[filename].dir) {
+                let fileData = await contents.files[filename].async("blob");
+                // Create a temporary local URL for each flag image
+                let blobUrl = URL.createObjectURL(fileData);
+                // Clean filename (e.g., "af-flag.png" or "flags/af-flag.png" -> "af")
+                let cleanName = filename.split('/').pop().replace('-flag.png', '').replace('.png', '').toLowerCase().trim();
+                zipFlagCache[cleanName] = blobUrl;
+            }
+        }
+        zipLoaded = true;
+        console.log("Flags successfully extracted from ZIP archive!");
+    } catch (err) {
+        console.warn("Could not load flags.zip:", err);
+    }
+}
+
+// Run this when your game boots up
+loadFlagsFromZip();
 // Function to update the flag preview image next to the dropdown selection
-function updateFlagPreview() {
+async function updateFlagPreview() {
     const flagSelect = document.getElementById('player-flag-select');
     const flagPreview = document.getElementById('selected-flag-preview');
     if (flagSelect && flagPreview) {
         let countryCode = flagSelect.value.toLowerCase().trim();
-        flagPreview.src = `flags/${countryCode}-flag.png`;
+        
+        // Wait until zip is ready, then pull the image URL from memory
+        if (!zipLoaded) await loadFlagsFromZip();
+        
+        if (zipFlagCache[countryCode]) {
+            flagPreview.src = zipFlagCache[countryCode];
+        }
     }
 }
 
