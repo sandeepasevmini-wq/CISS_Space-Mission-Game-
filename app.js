@@ -27,6 +27,7 @@ function playClick() {
     audioClick.currentTime = 0;
     audioClick.play().catch(() => {});
 }
+
 let zipFlagCache = {};
 let zipLoaded = false;
 
@@ -59,6 +60,7 @@ async function loadFlagsFromZip() {
 
 // Run this when your game boots up
 loadFlagsFromZip();
+
 // Function to update the flag preview image next to the dropdown selection
 async function updateFlagPreview() {
     const flagSelect = document.getElementById('player-flag-select');
@@ -145,6 +147,8 @@ async function loadGlobalLeaderboard() {
     if (!tableBody) return;
 
     try {
+        if (!zipLoaded) await loadFlagsFromZip();
+
         const response = await fetch(`${API_URL}/latest`, {
             method: 'GET',
             headers: { 
@@ -178,12 +182,12 @@ async function loadGlobalLeaderboard() {
             const row = document.createElement('tr');
             
             let flagCode = entry.country ? entry.country.toLowerCase().trim() : 'af';
-            if (flagCode.length > 3) flagCode = 'af';
+            let flagUrl = zipFlagCache[flagCode] || '';
 
             row.innerHTML = `
                 <td>#${index + 1}</td>
                 <td style="text-align: center;">
-                    <img src="flags/${flagCode}-flag.png" alt="${flagCode}" style="width: 22px; height: 16px; vertical-align: middle; border-radius: 2px; object-fit: cover;">
+                    <img src="${flagUrl}" alt="${flagCode}" style="width: 22px; height: 16px; vertical-align: middle; border-radius: 2px; object-fit: cover;">
                 </td>
                 <td>${entry.name || 'Commander'}</td>
                 <td>${entry.target || 'N/A'}</td>
@@ -431,10 +435,9 @@ function startMission() {
     if (document.getElementById('anomaly-alert')) document.getElementById('anomaly-alert').classList.add('hidden');
     if (document.getElementById('score-display')) document.getElementById('score-display').classList.add('hidden');
      
- missionStatus = "TRANSIT INITIATED...";
+    missionStatus = "TRANSIT INITIATED...";
     if (document.getElementById('debrief-text')) document.getElementById('debrief-text').innerText = "Spacecraft en route to " + activeTarget.name + "...";
 
-    // Auto-scroll to telemetry viewport
     const viewportSection = document.querySelector('.viewport');
     if (viewportSection) {
         viewportSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -545,7 +548,6 @@ function drawSpace() {
         ctx.fillStyle = '#ffd700';
         ctx.fill();
 
-        // Trigger dynamic randomized challenge mid-flight
         if (probeProgress > 0.45 && probeProgress < 0.50 && !anomalyTriggered && !anomalyResolved) {
             anomalyTriggered = true;
             triggerRandomChallenge();
@@ -576,7 +578,6 @@ function drawSpace() {
     requestAnimationFrame(drawSpace);
 }
 
-// Helper function to show arcade banner, play audio, and trigger cutscene video
 function playCutscene(videoSrc, isSuccess, titleText, subText) {
     const videoElem = document.getElementById('debrief-video');
     const statusOverlay = document.getElementById('status-overlay');
@@ -616,7 +617,6 @@ function evaluateMission() {
     let finalScore = 0;
     let grade = 'F';
 
-    // Fetch currently selected instrument and comm systems for data bottleneck calculation
     const instKey = document.getElementById('instrument-select').value;
     const commKey = document.getElementById('comm-select').value;
     const chosenInstrument = instruments[instKey];
@@ -649,7 +649,6 @@ function evaluateMission() {
         playCutscene('videos/mission-fail.mp4', false, "MISSION COMPROMISED", "LOW BANDWIDTH // INSUFFICIENT UPLINK");
 
     } else {
-        // --- DATA THROUGHPUT BOTTLENECK CHECK ---
         let dataEfficiency = 1.0;
         let bottleneckWarning = "";
         
@@ -683,7 +682,7 @@ function evaluateMission() {
         highScore = finalScore;
         localStorage.setItem('space_architect_highscore', highScore);
         if (document.getElementById('high-score-val')) {
-            document.getElementById('high-score-val').innerText = highScore; // FIXED TYPO HERE
+            document.getElementById('high-score-val').innerText = highScore;
         }
     }
 
@@ -757,7 +756,6 @@ function animateStarfield() {
     requestAnimationFrame(animateStarfield);
 }
 
-// Triggered when user clicks "PRESS TO START"
 function startLoadingSequence() {
     const startBtn = document.getElementById('start-loader-btn');
     if (startBtn) startBtn.style.display = 'none';
@@ -768,7 +766,6 @@ function startLoadingSequence() {
     runGameLoader();
 }
 
-// Standalone Cockpit Loader Engine
 function runGameLoader() {
     let progress = 0;
     const progressBar = document.getElementById('progress-bar');
@@ -807,10 +804,8 @@ function runGameLoader() {
                     loaderScreen.style.visibility = 'hidden';
                 }
                 
-                // Play ambient background audio immediately as loader fades out
                 audioAmbient.play().catch(() => {});
 
-                // SHOW WELCOME BRIEFING MODAL
                 const welcomeModal = document.getElementById('welcome-modal');
                 if (welcomeModal) {
                     welcomeModal.style.display = 'flex';
@@ -820,7 +815,6 @@ function runGameLoader() {
     }, 60);
 }
 
-// Close Welcome Modal
 function closeWelcomeModal() {
     const welcomeModal = document.getElementById('welcome-modal');
     if (welcomeModal) {
