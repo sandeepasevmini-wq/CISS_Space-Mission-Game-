@@ -574,3 +574,40 @@ canvas#spaceCanvas {
         word-break: break-word;
     }
 }
+/* --- RESPONSIVE LOGO SWITCHER --- */
+/* Default Desktop Styles */
+.desktop-logo-wrap {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    z-index: 1000;
+}
+.desktop-logo-wrap img {
+    height: 75px;
+    width: auto;
+    display: block;
+}
+
+.mobile-logo-wrap {
+    display: none;
+}
+
+/* Mobile Phone Styles (Max width 768px) */
+@media screen and (max-width: 768px) {
+    /* Hide the top-right desktop logo completely */
+    .desktop-logo-wrap {
+        display: none !important;
+    }
+
+    /* Show the centered mobile logo above the heading */
+    .mobile-logo-wrap {
+        display: flex !important;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+    .mobile-logo-wrap img {
+        height: 65px;
+        width: auto;
+        display: block;
+    }
+}
