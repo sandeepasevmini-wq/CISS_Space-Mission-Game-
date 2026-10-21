@@ -459,6 +459,7 @@ canvas#spaceCanvas {
     color: #2ea043;
     font-weight: bold;
 }
+
 /* --- MOBILE RESPONSIVE FIXES --- */
 @media screen and (max-width: 768px) {
     /* Make the main dashboard stack vertically */
@@ -500,5 +501,45 @@ canvas#spaceCanvas {
     header .subtitle {
         font-size: 0.75rem !important;
         padding: 0 10px;
+    }
+
+    /* Fix pilot fields wrapping on mobile */
+    .pilot-fields {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    #player-flag-select, #player-name-input {
+        width: 100% !important;
+    }
+
+    /* Make leaderboard table scroll horizontally if needed to prevent squishing */
+    .leaderboard-card {
+        width: 100% !important;
+        box-sizing: border-box;
+        overflow-x: auto;
+    }
+
+    #leaderboard-table {
+        min-width: 280px;
+    }
+
+    /* Fix footer side cutoffs and stack columns */
+    footer > div {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 0 10px !important;
+        box-sizing: border-box;
+    }
+
+    footer div[style*="min-width"] {
+        min-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    footer p, footer a {
+        word-break: break-word;
     }
 }
