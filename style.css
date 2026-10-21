@@ -27,6 +27,15 @@ body {
     display: none;
 }
 
+/* Header Logo Styling */
+.header-logo-container img {
+    max-height: 50px;
+    transition: transform 0.2s ease;
+}
+.header-logo-container img:hover {
+    transform: scale(1.05);
+}
+
 #bgCanvas {
     position: fixed;
     top: 0;
