@@ -9,6 +9,36 @@ body {
     flex-direction: column;
     align-items: center;
 }
+
+/* RESPONSIVE LOGO SWITCHER RULES */
+.desktop-logo {
+    display: block;
+}
+
+.mobile-logo {
+    display: none;
+}
+
+@media screen and (max-width: 768px) {
+    .desktop-logo {
+        display: none !important;
+    }
+    .mobile-logo {
+        display: flex !important;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+}
+
+@media screen and (min-width: 769px) {
+    .desktop-logo {
+        display: block !important;
+    }
+    .mobile-logo {
+        display: none !important;
+    }
+}
+
 /* Header Logo Styling */
 .header-logo-container img {
     max-height: 50px;
@@ -391,6 +421,7 @@ canvas#spaceCanvas {
     color: #8b949e;
     font-family: monospace;
 }
+
 /* PILOT CALLSIGN & COUNTRY INPUT */
 .pilot-input-group {
     border-bottom: 1px dashed #30363d;
