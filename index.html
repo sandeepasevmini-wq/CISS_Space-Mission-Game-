@@ -2,7 +2,7 @@
 <html lang="en" style="position: relative; margin: 0;">
 <head>
     <!-- JSZip Library for reading compressed archives -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space Mission Systems Architect</title>
@@ -10,6 +10,10 @@
 </head>
 <body style="position: relative; margin: 0;">
 
+    <!-- STATIONARY TOP-RIGHT INSTITUTE LOGO (DESKTOP ONLY) -->
+    <div class="desktop-logo-wrap">
+        <img src="ciss-logo.png" alt="CISS Logo" style="height: 75px; width: auto; display: block;">
+    </div>
 
     <!-- Dynamic Space Background -->
     <canvas id="bgCanvas"></canvas>
@@ -42,7 +46,7 @@
         </div>
     </div>
 
-<!-- MISSION WELCOME BRIEFING MODAL -->
+    <!-- MISSION WELCOME BRIEFING MODAL -->
     <div id="welcome-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 4, 8, 0.9); display: none; align-items: center; justify-content: center; z-index: 2000; font-family: monospace;">
         <div style="background: #0d1117; border: 1px solid #30363d; padding: 30px; border-radius: 8px; max-width: 450px; text-align: center; box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);">
             <h3 style="color: #58a6ff; margin-bottom: 15px; font-size: 1.2rem; letter-spacing: 1px;">MISSION BRIEFING</h3>
@@ -55,21 +59,12 @@
         </div>
     </div>
 
-<!-- DESKTOP TOP-RIGHT LOGO (Hidden on mobile via CSS) -->
-    <div class="desktop-logo-wrap">
-        <img src="ciss-logo.png" alt="CISS Logo">
-    </div>
-
     <!-- MAIN GAME DASHBOARD HEADER -->
     <header>
-        <!-- MOBILE CENTERED LOGO (Hidden on desktop via CSS) -->
+        <!-- MOBILE CENTERED LOGO (Appears ONLY on phones above the title) -->
         <div class="mobile-logo-wrap">
-            <img src="ciss-logo.png" alt="CISS Logo">
+            <img src="ciss-logo.png" alt="CISS Logo" style="height: 65px; width: auto; display: block;">
         </div>
-
-        <h1>SPACE MISSION SYSTEMS ARCHITECT</h1>
-        <p class="subtitle">INTERPLANETARY SYSTEMS ENGINEERING & TRADE-OFF SIMULATION</p>
-    </header>
 
         <h1>SPACE MISSION SYSTEMS ARCHITECT</h1>
         <p class="subtitle">INTERPLANETARY SYSTEMS ENGINEERING & TRADE-OFF SIMULATION</p>
@@ -109,7 +104,7 @@
                     <label for="player-name-input">PILOT CALLSIGN & COUNTRY:</label>
                     <div class="pilot-fields" style="display: flex; align-items: center; gap: 8px;">
                         <!-- Selected Flag Icon Preview -->
-                        <img id="selected-flag-preview" src="flags/af-flag.png" alt="Flag Preview" style="width: 24px; height: 18px; border-radius: 2px; object-fit: cover;">
+                        <img id="selected-flag-preview" src="" alt="Flag Preview" style="width: 24px; height: 18px; border-radius: 2px; object-fit: cover;">
                         
                         <!-- 150 COUNTRIES IN ALPHABETICAL ORDER -->
                         <select id="player-flag-select" onchange="updateFlagPreview();">
@@ -353,14 +348,14 @@
             </div>
             
             <!-- MID-FLIGHT EMERGENCY ANOMALY BANNER -->
-<div id="anomaly-alert" class="anomaly-box hidden">
-    <h4 id="anomaly-title">⚠️ INCOMING ANOMALY WARNING</h4>
-    <p id="anomaly-desc">Anomaly description goes here...</p>
-    <div class="anomaly-actions">
-        <button id="anomaly-btn-1" onclick="handleChallengeChoice(1); playClick();">ACTION 1</button>
-        <button id="anomaly-btn-2" onclick="handleChallengeChoice(2); playClick();">ACTION 2</button>
-    </div>
-</div>
+            <div id="anomaly-alert" class="anomaly-box hidden">
+                <h4 id="anomaly-title">⚠️ INCOMING ANOMALY WARNING</h4>
+                <p id="anomaly-desc">Anomaly description goes here...</p>
+                <div class="anomaly-actions">
+                    <button id="anomaly-btn-1" onclick="handleChallengeChoice(1); playClick();">ACTION 1</button>
+                    <button id="anomaly-btn-2" onclick="handleChallengeChoice(2); playClick();">ACTION 2</button>
+                </div>
+            </div>
 
             <!-- DEBRIEF & SCIENTIFIC YIELD RESULT -->
             <div id="debrief-box" class="debrief">
@@ -401,7 +396,7 @@
     </main>
 
     <!-- INSTITUTE FOOTER & PLAYER REVIEWS -->
-    <footer style="margin-top: 50px; padding: 30px 20px; background: rgba(2, 4, 8, 0.95); border-top: 1px solid #30363d; font-family: monospace; color: #8b949e;">
+    <footer style="margin-top: 50px; padding: 30px 20px; background: rgba(2, 4, 8, 0.95); border-top: 1px solid #30363d; font-family: monospace; color: #8b949e; width: 100%; box-sizing: border-box;">
         <div style="max-width: 900px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 30px;">
             
             <!-- Institute Contact Information -->
