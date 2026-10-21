@@ -55,15 +55,20 @@
         </div>
     </div>
 
-<!-- MAIN GAME DASHBOARD HEADER WITH INTEGRATED LOGO -->
-    <header style="text-align: center; padding: 20px 15px; display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative;">
-        <!-- Institute Logo -->
-        <img src="ciss-logo.png" alt="CISS Logo" style="height: 65px; width: auto; display: block;">
-        
-        <div>
-            <h1 style="font-size: 1.5rem; margin: 0; line-height: 1.2;">SPACE MISSION SYSTEMS ARCHITECT</h1>
-            <p class="subtitle" style="margin: 5px 0 0 0;">INTERPLANETARY SYSTEMS ENGINEERING & TRADE-OFF SIMULATION</p>
+<!-- STATIONARY TOP-RIGHT INSTITUTE LOGO (DESKTOP ONLY) -->
+    <div class="desktop-logo" style="position: absolute; top: 15px; right: 20px; z-index: 1000;">
+        <img src="ciss-logo.png" alt="CISS Logo" style="height: 75px; width: auto; display: block;">
+    </div>
+
+    <!-- MAIN GAME DASHBOARD HEADER -->
+    <header style="text-align: center; padding: 25px 20px; position: relative;">
+        <!-- MOBILE LOGO (Appears ONLY on phones before the title) -->
+        <div class="mobile-logo" style="display: none; justify-content: center; margin-bottom: 12px;">
+            <img src="ciss-logo.png" alt="CISS Logo" style="height: 60px; width: auto; display: block;">
         </div>
+
+        <h1>SPACE MISSION SYSTEMS ARCHITECT</h1>
+        <p class="subtitle">INTERPLANETARY SYSTEMS ENGINEERING & TRADE-OFF SIMULATION</p>
     </header>
 
     <main class="dashboard">
