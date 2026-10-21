@@ -11,49 +11,20 @@ body {
 }
 
 /* RESPONSIVE LOGO SWITCHER RULES */
-.desktop-logo {
+.desktop-logo-wrap {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    z-index: 1000;
+}
+.desktop-logo-wrap img {
+    height: 75px;
+    width: auto;
     display: block;
 }
 
-.mobile-logo {
+.mobile-logo-wrap {
     display: none;
-}
-
-@media screen and (max-width: 768px) {
-    .desktop-logo {
-        display: none !important;
-    }
-    .mobile-logo {
-        display: flex !important;
-        justify-content: center;
-        margin-bottom: 12px;
-    }
-}
-
-@media screen and (min-width: 769px) {
-    .desktop-logo {
-        display: block !important;
-    }
-    .mobile-logo {
-        display: none !important;
-    }
-}
-
-/* Header Logo Styling */
-.header-logo-container img {
-    max-height: 50px;
-    transition: transform 0.2s ease;
-}
-.header-logo-container img:hover {
-    transform: scale(1.05);
-}
-
-@media (max-width: 768px) {
-    header {
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
-    }
 }
 
 #bgCanvas {
@@ -69,6 +40,8 @@ body {
 header {
     text-align: center;
     margin-bottom: 20px;
+    position: relative;
+    width: 100%;
 }
 
 header h1 {
@@ -493,6 +466,23 @@ canvas#spaceCanvas {
 
 /* --- MOBILE RESPONSIVE FIXES --- */
 @media screen and (max-width: 768px) {
+    /* Hide top-right desktop logo on mobile */
+    .desktop-logo-wrap {
+        display: none !important;
+    }
+
+    /* Show centered logo above header title on mobile */
+    .mobile-logo-wrap {
+        display: flex !important;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+    .mobile-logo-wrap img {
+        height: 65px;
+        width: auto;
+        display: block;
+    }
+
     /* Make the main dashboard stack vertically */
     main.dashboard {
         display: flex;
@@ -515,7 +505,7 @@ canvas#spaceCanvas {
         width: 100% !important;
         max-width: 100% !important;
         height: auto !important;
-        aspect-ratio: 420 / 320; /* Preserves your exact game ratio */
+        aspect-ratio: 420 / 320;
     }
 
     /* Ensure dropdowns and inputs don't overflow mobile screens */
