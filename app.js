@@ -688,13 +688,15 @@ function evaluateMission() {
         audioWin.currentTime = 0;
         audioWin.play().catch(() => {});
         
-        if (activeTarget.name.includes('Europa')) {
+if (activeTarget.name.includes('Europa')) {
             playCutscene('videos/europa-win.mp4', true, "MISSION SUCCESSFUL", "EUROPA ORBIT INSERTION CONFIRMED");
         } else if (activeTarget.name.includes('Titan')) {
             playCutscene('videos/titan-win.mp4', true, "MISSION SUCCESSFUL", "TITAN ATMOSPHERIC DESCENT SUCCESS");
-        } else if (activeTarget.name.includes('Psyche')) {
+        } else if (activeTarget.distAU === 3.0 || activeTarget.name.toLowerCase().includes('psyche')) {
             playCutscene('videos/psyche-win.mp4', true, "MISSION SUCCESSFUL", "16 PSYCHE ORBIT INSERTION CONFIRMED");
-    }
+        } else {
+            playCutscene('videos/europa-win.mp4', true, "MISSION SUCCESSFUL", "ALL OBJECTIVES ACHIEVED");
+        }
 
     if (finalScore > highScore) {
         highScore = finalScore;
