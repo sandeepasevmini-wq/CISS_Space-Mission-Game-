@@ -76,17 +76,21 @@
     <main class="dashboard">
         <!-- Control Panel Column -->
         <section class="controls">
-            <h2>1. SELECT TARGET DESTINATION</h2>
-            <div class="mission-selection">
-                <button class="target-card active" onclick="selectTarget('Europa', this); playClick();">
-                    <img src="europa.jpg" alt="Europa Moon">
-                    <span>Europa (Jupiter)</span>
-                </button>
-                <button class="target-card" onclick="selectTarget('Titan', this); playClick();">
-                    <img src="titan.jpg" alt="Titan Moon">
-                    <span>Titan (Saturn)</span>
-                </button>
-            </div>
+<h2>1. SELECT TARGET DESTINATION</h2>
+<div class="mission-selection">
+    <button class="target-card active" onclick="selectTarget('Europa', this); playClick();">
+        <img src="europa.jpg" alt="Europa Moon">
+        <span>Europa (Jupiter)</span>
+    </button>
+    <button class="target-card" onclick="selectTarget('Titan', this); playClick();">
+        <img src="titan.jpg" alt="Titan Moon">
+        <span>Titan (Saturn)</span>
+    </button>
+    <button class="target-card" onclick="selectTarget('Psyche', this); playClick();">
+        <img src="16 Psyche Asteroid.jpg" alt="Psyche Asteroid">
+        <span>16 Psyche (Asteroid Belt)</span>
+    </button>
+</div>
             
             <div class="objective-card">
                 <p id="target-display">Selected Target: Europa (Jupiter) | Distance: 5.2 AU</p>
