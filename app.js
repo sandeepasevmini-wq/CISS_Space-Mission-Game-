@@ -694,9 +694,6 @@ function evaluateMission() {
             playCutscene('videos/titan-win.mp4', true, "MISSION SUCCESSFUL", "TITAN ATMOSPHERIC DESCENT SUCCESS");
         } else if (activeTarget.name.includes('Psyche')) {
             playCutscene('videos/psyche-win.mp4', true, "MISSION SUCCESSFUL", "16 PSYCHE ORBIT INSERTION CONFIRMED");
-        } else {
-            playCutscene('videos/europa-win.mp4', true, "MISSION SUCCESSFUL", "ALL OBJECTIVES ACHIEVED");
-        }
     }
 
     if (finalScore > highScore) {
