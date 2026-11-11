@@ -77,7 +77,7 @@ async function updateFlagPreview() {
     }
 }
 
-// Destinations Database
+// Destinations Database (Including 16 Psyche Asteroid)
 const destinations = {
     Europa: {
         x: 350, y: 160, color: '#a6e3e9', name: 'Europa (Jupiter)',
@@ -90,6 +90,12 @@ const destinations = {
         goal: 'Explore nitrogen atmosphere & map hydrocarbon seas for organic chemistry.',
         reqPower: 500, reqShielding: 40, minCommKbps: 50,
         radiationHazard: false, distAU: 9.5
+    },
+    Psyche: {
+        x: 270, y: 100, color: '#c0c0c0', name: '16 Psyche Asteroid',
+        goal: 'Map the metallic composition of the asteroid and investigate planetary core formation.',
+        reqPower: 250, reqShielding: 30, minCommKbps: 40,
+        radiationHazard: false, distAU: 3.0
     }
 };
 
@@ -181,8 +187,7 @@ async function loadGlobalLeaderboard() {
         list.slice(0, 10).forEach((entry, index) => {
             const row = document.createElement('tr');
             
-let flagCode = entry.country ? entry.country.toLowerCase().trim() : 'af';
-            // Check both clean name and with '-flag' suffix
+            let flagCode = entry.country ? entry.country.toLowerCase().trim() : 'af';
             let flagUrl = zipFlagCache[flagCode] || zipFlagCache[flagCode + '-flag'] || '';
 
             row.innerHTML = `
@@ -253,7 +258,7 @@ async function submitLiveScore() {
             name: playerName,
             country: playerFlag,
             score: currentScore,
-            target: activeTarget.name.split(' ')[0],
+            target: activeTarget.name.includes('Psyche') ? 'Psyche' : activeTarget.name.split(' ')[0],
             grade: currentGrade
         };
         binData.scores.push(newEntry);
@@ -445,7 +450,7 @@ function startMission() {
     }
 }
 
-// 7 NASA-Grounded Dynamic Challenges per Destination
+// Dynamic Challenges per Destination (Including 16 Psyche Asteroid)
 const europaChallenges = [
     { title: "⚠️ JOVIAN RADIATION TORUS SURGE", desc: "Intense plasma belt radiation is frying electronics!", action1: "Divert Power to Shields", action2: "Spin-Axis Maneuver", type: "radiation" },
     { title: "⚠️ CRYOCVOLCANIC PLUME EJECTION", desc: "Subsurface water vapor plume detected ahead!", action1: "Fire Thrusters (Alt-Path)", action2: "Retract Instruments & Coast", type: "plume" },
@@ -466,8 +471,21 @@ const titanChallenges = [
     { title: "⚠️ DEEP SATURN COMMS BLACKOUT", desc: "Solar plasma interference cutting Earth uplink!", action1: "Enable Autonomous AI Mode", action2: "Store Data in Buffer", type: "comms" }
 ];
 
+const psycheChallenges = [
+    { title: "⚠️ METALLIC ASTEROID MAGNETIC ANOMALY", desc: "Unexpected core magnetism interference disrupting guidance systems!", action1: "Switch to Inertial Gyro Backup", action2: "Shield Magnetometers", type: "magnetic" },
+    { title: "⚠️ ASTEROID BELT DEBRIS FIELD", desc: "Dense concentration of nickel-iron micrometeoroids detected!", action1: "Execute Evasive Roll Vector", action2: "Increase Shield Draw", type: "debris" },
+    { title: "⚠️ SOLAR FLUX REDUCTION", desc: "Main asteroid belt distance weakening array power efficiency!", action1: "Tilt Solar Wings 15°", action2: "Duty-Cycle Secondary Sensors", type: "power" },
+    { title: "⚠️ LOW GRAVITY CAPTURE INSTABILITY", desc: "Micro-gravity environment threatening orbit insertion accuracy!", action1: "Fire Cold-Gas Thrusters", action2: "Adjust Capture Hyperbolic Path", type: "gravity" },
+    { title: "⚠️ SURFACE REFLECTIVITY GLARE", desc: "Pure metal surface causing high-intensity optical glare!", action1: "Deploy Sensor Sunshades", action2: "Switch to Infrared Band", type: "glare" },
+    { title: "⚠️ DEEP BELT COMMS LATENCY SPIKE", desc: "Solar conjunction causing telemetry transmission packet loss!", action1: "Buffer Data to Solid-State", action2: "Increase High-Gain Power", type: "comms" },
+    { title: "⚠️ ION THRUSTER PLUME CONTAMINATION", desc: "Ion propulsion exhaust settling on optical lenses!", action1: "Vector Thruster Away from Target", action2: "Thermal Bake-Out Cycle", type: "thruster" }
+];
+
 function triggerRandomChallenge() {
-    const pool = activeTarget.name.includes('Europa') ? europaChallenges : titanChallenges;
+    let pool = europaChallenges;
+    if (activeTarget.name.includes('Titan')) pool = titanChallenges;
+    else if (activeTarget.name.includes('Psyche')) pool = psycheChallenges;
+
     currentActiveChallenge = pool[Math.floor(Math.random() * pool.length)];
 
     const titleElem = document.getElementById('anomaly-title');
@@ -674,6 +692,8 @@ function evaluateMission() {
             playCutscene('videos/europa-win.mp4', true, "MISSION SUCCESSFUL", "EUROPA ORBIT INSERTION CONFIRMED");
         } else if (activeTarget.name.includes('Titan')) {
             playCutscene('videos/titan-win.mp4', true, "MISSION SUCCESSFUL", "TITAN ATMOSPHERIC DESCENT SUCCESS");
+        } else if (activeTarget.name.includes('Psyche')) {
+            playCutscene('videos/europa-win.mp4', true, "MISSION SUCCESSFUL", "16 PSYCHE ORBIT INSERTION CONFIRMED");
         } else {
             playCutscene('videos/europa-win.mp4', true, "MISSION SUCCESSFUL", "ALL OBJECTIVES ACHIEVED");
         }
