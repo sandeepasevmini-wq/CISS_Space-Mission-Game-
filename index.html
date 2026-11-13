@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="en" style="position: relative; margin: 0;">
 <head>
-    <!-- JSZip Library for reading compressed archives -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space Mission Systems Architect</title>
+    
+    <!-- FAVICON -->
+    <link rel="icon" type="image/png" href="CISS.png">
+
     <link rel="stylesheet" href="style.css">
+    
+    <!-- LIBRARIES: JSZip & Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- FIREBASE MULTIPLAYER ENGINES (v8 Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body style="position: relative; margin: 0;">
 
@@ -46,23 +56,54 @@
         </div>
     </div>
 
-    <!-- MISSION WELCOME BRIEFING MODAL -->
-    <div id="welcome-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 4, 8, 0.9); display: none; align-items: center; justify-content: center; z-index: 2000; font-family: monospace;">
-        <div style="background: #0d1117; border: 1px solid #30363d; padding: 30px; border-radius: 8px; max-width: 450px; text-align: center; box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);">
-            <h3 style="color: #58a6ff; margin-bottom: 15px; font-size: 1.2rem; letter-spacing: 1px;">MISSION BRIEFING</h3>
-            <p style="color: #c9d1d9; font-size: 0.9rem; line-height: 1.6; margin-bottom: 25px;">
-                Design interplanetary spacecraft within budget and mass limits to complete deep-space missions and overcome the challenges along your journey.
-            </p>
-            <button onclick="closeWelcomeModal(); playClick();" style="background: #238636; border: 1px solid #2ea043; color: white; padding: 10px 24px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; letter-spacing: 1px;">
-                ACCEPT MISSION
-            </button>
+    <!-- MULTIPLAYER LOBBY MODAL -->
+    <div id="welcome-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 4, 8, 0.9); display: none; align-items: center; justify-content: center; z-index: 2000; font-family: monospace;">
+        <div class="modal-content" style="background: #0d1117; border: 1px solid #30363d; padding: 30px; border-radius: 8px; max-width: 600px; text-align: center; box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);">
+            <h1 style="color: #58a6ff; margin-bottom: 10px; margin-top: 0;">MISSION DEPLOYMENT</h1>
+            <p style="color: #8b949e; margin-bottom: 30px;">Select your deployment configuration.</p>
+            
+            <!-- Main Choice -->
+            <div id="lobby-main" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px;">
+                <button onclick="startSolo()" class="action-btn" style="width: 160px; background: #21262d; border: 1px solid #30363d; color: white; padding: 15px; border-radius: 6px; cursor: pointer; font-family: monospace; font-weight: bold; font-size: 0.9rem;">
+                    👤 SOLO FLIGHT
+                </button>
+                <button onclick="showHostScreen()" class="action-btn" style="width: 160px; background: #8957e5; border: 1px solid #6e40c9; color: white; padding: 15px; border-radius: 6px; cursor: pointer; font-family: monospace; font-weight: bold; font-size: 0.9rem;">
+                    📡 HOST TEAM GAME
+                </button>
+                <button onclick="showJoinScreen()" class="action-btn" style="width: 160px; background: #2ea043; border: 1px solid #238636; color: white; padding: 15px; border-radius: 6px; cursor: pointer; font-family: monospace; font-weight: bold; font-size: 0.9rem;">
+                    🚀 JOIN TEAM GAME
+                </button>
+            </div>
+
+            <!-- Join Screen -->
+            <div id="lobby-join" style="display: none; text-align: left;">
+                <h3 style="color: #a5d6ff; border-bottom: 1px solid #30363d; padding-bottom: 5px;">JOIN ACTIVE MISSION</h3>
+                <input type="text" id="join-room-code" placeholder="Enter 4-Digit Room Code..." style="width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; font-family: monospace; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 1rem; text-align: center; letter-spacing: 2px;">
+                
+                <label style="color: #8b949e; font-size: 0.85rem; display: block; margin-bottom: 5px;">SELECT YOUR CREW ROLE:</label>
+                <select id="join-role" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 25px; font-family: monospace; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.9rem;">
+                    <option value="cmd">Commander (Budget & Launch Control)</option>
+                    <option value="eng">Lead Engineer (Power & Shields)</option>
+                    <option value="sci">Chief Scientist (Target Destination & Instruments)</option>
+                    <option value="fd">Flight Director (Route Trajectory & Comms)</option>
+                </select>
+                
+                <button onclick="joinMultiplayerRoom()" class="action-btn" style="width: 100%; background: #2ea043; border: 1px solid #238636; color: white; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; letter-spacing: 1px;">
+                    CONNECT TO HANGAR
+                </button>
+            </div>
+
+            <!-- Room Active Status -->
+            <div id="lobby-active" style="display: none;">
+                <h3 style="color: #58a6ff;">NETWORK ESTABLISHED</h3>
+                <p style="margin: 20px 0;">ROOM CODE: <strong id="display-room-code" style="font-size: 2.5rem; color: #d2a8ff; letter-spacing: 6px; background: #21262d; padding: 10px 20px; border-radius: 6px; border: 1px solid #30363d;">----</strong></p>
+                <p id="role-display-text" style="color: #8b949e; font-size: 0.9rem;">Awaiting crew members...</p>
+                <button onclick="closeWelcomeModal()" class="action-btn" style="width: 100%; background: #1f6feb; border: 1px solid #388bfd; color: white; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 25px; font-family: monospace; letter-spacing: 1px;">
+                    ENTER HANGAR VIEW
+                </button>
+            </div>
         </div>
     </div>
-
-<!-- DESKTOP TOP-RIGHT LOGO -->
-<div class="desktop-logo-wrap">
-    <img src="ciss-logo.png" alt="CISS Logo">
-</div>
 
 <header>
     <!-- MOBILE CENTERED LOGO -->
@@ -76,41 +117,61 @@
     <main class="dashboard">
         <!-- Control Panel Column -->
         <section class="controls">
-<h2>1. SELECT TARGET DESTINATION</h2>
-<div class="mission-selection">
-    <button class="target-card active" onclick="selectTarget('Europa', this); playClick();">
-        <img src="europa.jpg" alt="Europa Moon">
-        <span>Europa (Jupiter)</span>
-    </button>
-    <button class="target-card" onclick="selectTarget('Titan', this); playClick();">
-        <img src="titan.jpg" alt="Titan Moon">
-        <span>Titan (Saturn)</span>
-    </button>
-    <button class="target-card" onclick="selectTarget('Psyche', this); playClick();">
-        <img src="psyche.jpg" alt="Psyche Asteroid">
-        <span>16 Psyche (Asteroid Belt)</span>
-    </button>
-</div>
+            
+            <!-- TARGET WRAPPER -->
+            <div id="control-target">
+                <h2>1. SELECT TARGET DESTINATION (Scientist)</h2>
+                <div class="mission-selection">
+                    <button class="target-card active" onclick="selectTarget('Europa', this); pushStateToNetwork(); playClick();">
+                        <img src="europa.jpg" alt="Europa Moon">
+                        <span>Europa (Jupiter)</span>
+                    </button>
+                    <button class="target-card" onclick="selectTarget('Titan', this); pushStateToNetwork(); playClick();">
+                        <img src="titan.jpg" alt="Titan Moon">
+                        <span>Titan (Saturn)</span>
+                    </button>
+                    <button class="target-card" onclick="selectTarget('Psyche', this); pushStateToNetwork(); playClick();">
+                        <img src="psyche.jpg" alt="Psyche Asteroid">
+                        <span>16 Psyche (Asteroid Belt)</span>
+                    </button>
+                </div>
+            </div>
             
             <div class="objective-card">
                 <p id="target-display">Selected Target: Europa (Jupiter) | Distance: 5.2 AU</p>
             </div>
 
-            <h2>2. TRAJECTORY & FLIGHT PLAN</h2>
-            <div class="setting">
-                <label for="route-select">FLIGHT ROUTE:</label>
-                <select id="route-select" onchange="updateSettings(); playClick();">
-                    <option value="Direct">Direct Flight (Fast Transit | Standard Fuel)</option>
-                    <option value="GravityAssist">Gravity Assist Flyby (Slow Transit | Save Mass/Budget)</option>
-                </select>
+            <!-- DIFFICULTY WRAPPER -->
+            <div id="control-difficulty">
+                <h2>2. DIFFICULTY LEVEL (Commander)</h2>
+                <div class="setting">
+                    <label for="difficulty-select">MISSION TIER:</label>
+                    <select id="difficulty-select" onchange="pushStateToNetwork(); playClick();">
+                        <option value="Cadet">Cadet (Generous $1,500M Budget & Lower Constraints)</option>
+                        <option value="Commander" selected>Commander (Standard Simulation - $1,000M)</option>
+                        <option value="Architect">Architect (Hardcore $750M Budget & Strict Hazards)</option>
+                    </select>
+                </div>
             </div>
 
-            <h2>3. PILOT CALLSIGN & METRICS</h2>
+            <!-- ROUTE WRAPPER -->
+            <div id="control-route">
+                <h2>3. TRAJECTORY & FLIGHT PLAN (Flight Director)</h2>
+                <div class="setting">
+                    <label for="route-select">FLIGHT ROUTE:</label>
+                    <select id="route-select" onchange="pushStateToNetwork(); playClick();">
+                        <option value="Direct">Direct Flight (Fast Transit | Standard Fuel)</option>
+                        <option value="GravityAssist">Gravity Assist Flyby (Slow Transit | Save Mass/Budget)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- PILOT METRICS (Visible to all) -->
+            <h2>4. PILOT CALLSIGN & METRICS</h2>
             <div class="tracker-box">
                 <div class="pilot-input-group">
                     <label for="player-name-input">PILOT CALLSIGN & COUNTRY:</label>
                     <div class="pilot-fields" style="display: flex; align-items: center; gap: 8px;">
-                        <!-- Selected Flag Icon Preview -->
                         <img id="selected-flag-preview" src="" alt="Flag Preview" style="width: 24px; height: 18px; border-radius: 2px; object-fit: cover;">
                         
                         <!-- 150 COUNTRIES IN ALPHABETICAL ORDER -->
@@ -292,53 +353,112 @@
                 <p class="high-score-text">BEST LOCAL RECORD: <span id="high-score-val">0</span> PTS</p>
             </div>
 
-            <h2>4. SPACECRAFT SYSTEMS DESIGN</h2>
-            <div class="setting">
-                <label for="launcher-select">LAUNCH VEHICLE:</label>
-                <select id="launcher-select" onchange="updateSettings(); playClick();">
-                    <option value="FalconHeavy">Falcon Heavy ($150M | Max 1500kg)</option>
-                    <option value="SLS">Space Launch System ($800M | Max 3000kg)</option>
-                </select>
+            <h2>5. SPACECRAFT SYSTEMS DESIGN</h2>
+
+            <!-- REALISTIC 3D WEBGL HANGAR INSPECTION VIEWPORT (Visible to all) -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-family: monospace; font-size: 0.85rem; color: #58a6ff; margin-bottom: 6px;">🔍 REALISTIC 3D HANGAR (CLICK & DRAG TO ROTATE)</label>
+                <div id="hangar-container" style="position: relative; width: 100%; height: 220px; background: radial-gradient(circle, #0d1b2a 0%, #080c14 100%); border-radius: 6px; overflow: hidden; border: 1px solid #30363d; cursor: grab;">
+                    <!-- Three.js Canvas will be appended here automatically -->
+                </div>
             </div>
 
-            <div class="setting">
-                <label for="power-select">POWER GENERATOR:</label>
-                <select id="power-select" onchange="updateSettings(); playClick();">
-                    <option value="Solar">Solar Arrays ($50M | 200kg | 200W)</option>
-                    <option value="RTG">Nuclear RTG ($200M | 150kg | 600W)</option>
-                </select>
+            <!-- LAUNCHER WRAPPER -->
+            <div id="control-launcher">
+                <div class="setting">
+                    <label for="launcher-select">LAUNCH VEHICLE (Commander):</label>
+                    <select id="launcher-select" onchange="pushStateToNetwork(); playClick();">
+                        <option value="FalconHeavy">Falcon Heavy ($150M | Max 1500kg)</option>
+                        <option value="SLS">Space Launch System ($800M | Max 3000kg)</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="setting">
-                <label for="comm-select">COMMUNICATIONS SYSTEM:</label>
-                <select id="comm-select" onchange="updateSettings(); playClick();">
-                    <option value="LGA">Low-Gain Antenna ($20M | 50kg | 10 kbps)</option>
-                    <option value="HGA">High-Gain Dish ($80M | 120kg | 500 kbps)</option>
-                    <option value="Laser">Laser Comms ($180M | 80kg | 5000 kbps)</option>
-                </select>
+            <!-- POWER WRAPPER -->
+            <div id="control-power">
+                <div class="setting">
+                    <label for="power-select">POWER GENERATOR (Engineer):</label>
+                    <select id="power-select" onchange="pushStateToNetwork(); playClick();">
+                        <option value="Solar">Solar Arrays ($50M | 200kg | 200W)</option>
+                        <option value="RTG">Nuclear RTG ($200M | 150kg | 600W)</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="setting">
-                <label for="instrument-select">SCIENTIFIC PAYLOAD INSTRUMENT:</label>
-                <select id="instrument-select" onchange="updateSettings(); playClick();">
-                    <option value="Camera">Optical Imaging Camera ($40M | 60kg)</option>
-                    <option value="Radar">Ice-Penetrating Radar ($150M | 220kg)</option>
-                    <option value="Spectrometer">Mass Spectrometer ($110M | 100kg)</option>
-                </select>
+            <!-- COMMS WRAPPER -->
+            <div id="control-comm">
+                <div class="setting">
+                    <label for="comm-select">COMMUNICATIONS SYSTEM (Flight Director):</label>
+                    <select id="comm-select" onchange="pushStateToNetwork(); playClick();">
+                        <option value="LGA">Low-Gain Antenna ($20M | 50kg | 10 kbps)</option>
+                        <option value="HGA">High-Gain Dish ($80M | 120kg | 500 kbps)</option>
+                        <option value="Laser">Laser Comms ($180M | 80kg | 5000 kbps)</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="setting">
-                <label for="shield-slider">RADIATION SHIELDING: <span id="shield-val">50</span>% ($<span id="shield-cost">100</span>M | <span id="shield-mass">250</span>kg)</label>
-                <input type="range" id="shield-slider" min="10" max="100" value="50" oninput="updateSettings();">
+            <!-- INSTRUMENT WRAPPER -->
+            <div id="control-instrument">
+                <div class="setting">
+                    <label for="instrument-select">SCIENTIFIC PAYLOAD INSTRUMENT (Scientist):</label>
+                    <select id="instrument-select" onchange="pushStateToNetwork(); playClick();">
+                        <option value="Camera">Optical Imaging Camera ($40M | 60kg)</option>
+                        <option value="Radar">Ice-Penetrating Radar ($150M | 220kg)</option>
+                        <option value="Spectrometer">Mass Spectrometer ($110M | 100kg)</option>
+                    </select>
+                </div>
             </div>
 
-            <button class="launch-btn" onclick="startMission(); playClick();">INITIALIZE LAUNCH SEQUENCE</button>
+            <!-- SHIELD WRAPPER -->
+            <div id="control-shield">
+                <div class="setting">
+                    <label for="shield-slider">RADIATION SHIELDING (Engineer): <span id="shield-val">50</span>% ($<span id="shield-cost">100</span>M | <span id="shield-mass">250</span>kg)</label>
+                    <input type="range" id="shield-slider" min="10" max="100" value="50" oninput="pushStateToNetwork();">
+                </div>
+            </div>
+
+            <!-- ALL PLAYERS CAN SEE THE BUTTON, BUT IT TRIGGERS NETWORK SYNC -->
+            <button class="launch-btn" onclick="handleLaunchClick(); playClick();" style="margin-top: 15px;">INITIALIZE LAUNCH SEQUENCE</button>
         </section>
 
         <!-- Simulation Viewport & Standalone Leaderboard Column -->
         <section class="viewport">
 
-            <h2>5. ORBIT TELEMETRY & MISSION CONTROL</h2>
+            <!-- LEARN THE BASICS BUTTON (NO EMOJIS) -->
+            <div style="margin-bottom: 20px;">
+                <a href="basics.html" target="_blank" style="display: block; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #1f6feb 0%, #238636 100%); border: 1px solid #388bfd; color: white; padding: 14px; border-radius: 6px; font-family: monospace; font-weight: bold; text-decoration: none; text-align: center; letter-spacing: 2px; box-shadow: 0 0 15px rgba(31, 111, 235, 0.4); transition: all 0.3s ease;">
+                    LEARN THE BASICS
+                </a>
+            </div>
+
+            <h2>6. ORBIT TELEMETRY & MISSION CONTROL</h2>
+            
+            <!-- REAL-TIME MISSION RESOURCE DASHBOARD -->
+            <div style="background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin-bottom: 15px; font-family: monospace;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #21262d; padding-bottom: 6px;">
+                    <span style="color: #58a6ff; font-weight: bold; font-size: 0.9rem;">📊 REAL-TIME RESOURCE DASHBOARD</span>
+                    <span id="dash-status-badge" style="background: #238636; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">STANDBY</span>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem;">
+                    <div>
+                        <p style="margin: 0 0 3px 0; color: #8b949e;">POWER DRAW:</p>
+                        <strong id="dash-power" style="color: #e6edf3;">0W / 200W Req</strong>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 3px 0; color: #8b949e;">DATA THROUGHPUT:</p>
+                        <strong id="dash-kbps" style="color: #e6edf3;">0 kbps</strong>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 3px 0; color: #8b949e;">SHIELD INTEGRITY:</p>
+                        <strong id="dash-shield" style="color: #e6edf3;">50%</strong>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 3px 0; color: #8b949e;">CONSUMABLE FUEL:</p>
+                        <strong id="dash-fuel" style="color: #2ea043;">100%</strong>
+                    </div>
+                </div>
+            </div>
             
             <!-- Viewport Container for Canvas, Status Flash & Cutscene Video -->
             <div class="viewport-container" style="position: relative; width: 420px; height: 320px; background: #020408; border-radius: 6px; overflow: hidden; border: 1px solid #30363d;">
@@ -377,12 +497,47 @@
                         📡 TRANSMIT SCORE TO GLOBAL LEADERBOARD
                     </button>
                     <p id="submit-status" style="font-size: 0.75rem; color: #58a6ff; margin-top: 5px;"></p>
+
+                    <!-- MISSION REPORT BUTTON -->
+                    <button id="report-btn" onclick="downloadMissionReportPDF(); playClick();" style="margin-top: 8px; width: 100%; background: #1f6feb; border: 1px solid #388bfd; color: white; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        📄 MISSION REPORT
+                    </button>
                 </div>
+            </div>
+
+            <!-- SIMPLIFIED MISSION ARCHIVE PANEL -->
+            <div style="background: #0d1117; border: 1px solid #30363d; padding: 15px; border-radius: 6px; margin-top: 15px; font-family: monospace;">
+                <button onclick="openComparePage(); playClick();" style="width: 100%; background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 10px; border-radius: 4px; cursor: pointer; font-family: monospace; font-size: 0.85rem; font-weight: bold;">
+                    ⚖️ Compare Past Missions
+                </button>
             </div>
 
             <!-- SEPARATE STANDALONE GLOBAL LEADERBOARD SECTION -->
             <div class="leaderboard-card">
                 <h3>🏆 GLOBAL HALL OF FAME</h3>
+                
+                <!-- LEADERBOARD FILTERS -->
+                <div style="display: flex; gap: 10px; margin-bottom: 12px; font-family: monospace;">
+                    <div style="flex: 1;">
+                        <label for="filter-target" style="font-size: 0.75rem; color: #8b949e; display: block; margin-bottom: 3px;">FILTER DESTINATION:</label>
+                        <select id="filter-target" onchange="filterLeaderboardData()" style="width: 100%; background: #0d1117; border: 1px solid #30363d; color: white; padding: 6px; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
+                            <option value="ALL">All Destinations</option>
+                            <option value="Europa">Europa</option>
+                            <option value="Titan">Titan</option>
+                            <option value="Psyche">Psyche</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="filter-difficulty" style="font-size: 0.75rem; color: #8b949e; display: block; margin-bottom: 3px;">FILTER TIER:</label>
+                        <select id="filter-difficulty" onchange="filterLeaderboardData()" style="width: 100%; background: #0d1117; border: 1px solid #30363d; color: white; padding: 6px; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
+                            <option value="ALL">All Tiers</option>
+                            <option value="Cadet">Cadet</option>
+                            <option value="Commander">Commander</option>
+                            <option value="Architect">Architect</option>
+                        </select>
+                    </div>
+                </div>
+
                 <table id="leaderboard-table">
                     <thead>
                         <tr>
@@ -390,12 +545,13 @@
                             <th>FLAG</th>
                             <th>PILOT</th>
                             <th>TARGET</th>
+                            <th>TIER</th>
                             <th>SCORE</th>
                             <th>GRADE</th>
                         </tr>
                     </thead>
                     <tbody id="leaderboard-body">
-                        <tr><td colspan="6" style="text-align: center; color: #8b949e;">Loading Telemetry Records...</td></tr>
+                        <tr><td colspan="7" style="text-align: center; color: #8b949e;">Loading Telemetry Records...</td></tr>
                     </tbody>
                 </table>
             </div>
