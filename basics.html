@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en" style="position: relative; margin: 0; height: 100%;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CISS - Interplanetary Mission Briefing & Basics</title>
+    <link rel="icon" type="image/png" href="CISS.png">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #020408;
+            color: #c9d1d9;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .container {
+            max-width: 1050px;
+            margin: 40px auto;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+        }
+        header {
+            text-align: center;
+            background: rgba(13, 17, 23, 0.85);
+            border: 1px solid #30363d;
+            padding: 30px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+            box-shadow: 0 0 30px rgba(88, 166, 255, 0.15);
+        }
+        header h1 {
+            color: #58a6ff;
+            margin: 0 0 10px 0;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+        }
+        header p {
+            color: #8b949e;
+            margin: 0;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+        .nav-back {
+            display: inline-block;
+            margin-bottom: 20px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #58a6ff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+        .nav-back:hover {
+            background: #30363d;
+            color: white;
+        }
+        .section-card {
+            background: rgba(13, 17, 23, 0.88);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .section-card h2 {
+            color: #58a6ff;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #21262d;
+            padding-bottom: 8px;
+            margin-top: 0;
+            letter-spacing: 1px;
+        }
+        .content-flex {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .content-text {
+            flex: 1;
+            min-width: 280px;
+        }
+        .content-media {
+            width: 320px;
+            flex-shrink: 0;
+        }
+        .content-media img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        @media(max-width: 768px) {
+            .content-media { width: 100%; }
+        }
+        p, li {
+            line-height: 1.6;
+            font-size: 0.9rem;
+            color: #c9d1d9;
+        }
+        ul {
+            padding-left: 20px;
+            margin-bottom: 0;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        @media(max-width: 900px) {
+            .video-grid { grid-template-columns: 1fr; }
+        }
+        .video-box {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            overflow: hidden;
+            padding: 12px;
+        }
+        .video-box h4 {
+            color: #a5d6ff;
+            margin: 0 0 8px 0;
+            font-size: 0.85rem;
+            min-height: 35px;
+        }
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+        }
+        .iframe-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Interactive Starfield Background Canvas -->
+    <canvas id="bgCanvas"></canvas>
+
+    <div class="container">
+        <a href="index.html" class="nav-back">&larr; RETURN TO MISSION CONTROL HANGAR</a>
+
+        <header>
+            <h1>INTERPLANETARY SYSTEMS & MISSION ARCHITECTURE</h1>
+            <p>CEYLON INSTITUTE OF SPACE SCIENCE // EDUCATIONAL BRIEFING MANUAL</p>
+        </header>
+
+        <!-- SECTION 1: TRADE-OFF ENGINEERING -->
+        <div class="section-card">
+            <h2>1. SYSTEMS ENGINEERING & INTERPLANETARY TRADE-OFFS</h2>
+            <p>Designing spacecraft for deep-space exploration requires balancing severe physical constraints: <strong>mass budgets, launch vehicle payload limits, electrical power degradation, thermal protection, and communication bandwidth bottlenecks</strong>.</p>
+            <ul>
+                <li><strong>Launch Vehicle Cap:</strong> Heavy lifters like the Falcon Heavy and NASA's Space Launch System (SLS) establish strict dry-mass limits that dictate whether you can equip high-yield instruments like ice-penetrating radar or mass spectrometers.</li>
+                <li><strong>Power Systems:</strong> Solar arrays offer high initial wattage near Earth but suffer inverse-square law degradation in the outer solar system (requiring Nuclear Radioisotope Thermoelectric Generators [RTGs] for missions to Saturn or Jupiter).</li>
+                <li><strong>Radiation & Thermal Shielding:</strong> Passing through planetary radiation belts (such as Jupiter's Jovian torus) demands dense lead/composite shielding to prevent avionics failure.</li>
+            </ul>
+        </div>
+
+        <!-- SECTION 2: EUROPA -->
+        <div class="section-card">
+            <h2>2. TARGET DESTINATION: EUROPA (JUPITER)</h2>
+            <div class="content-flex">
+                <div class="content-text">
+                    <p>Europa is Jupiter's sixth closest moon. Beneath its fractured 15–25 km ice shell lies a global subsurface liquid ocean containing twice as much water as all of Earth's oceans combined, making it one of the premier targets in the search for extraterrestrial habitability.</p>
+                    <ul>
+                        <li><strong>Past & Present Missions:</strong> NASA's <em>Galileo</em> orbiter first mapped Europa's surface features in the 1990s. Currently en route is <strong>Europa Clipper</strong> (launched October 2024 via Falcon Heavy, utilizing a Mars gravity assist in 2025 and an Earth gravity assist in December 2026 to arrive at Jupiter in April 2030).</li>
+                        <li><strong>Mission Objectives:</strong> Confirming ocean chemistry, measuring ice-shell thickness, and scanning for biosignatures during 49 close flybys.</li>
+                    </ul>
+                </div>
+                <div class="content-media">
+                    <img src="europa.jpg" alt="Europa Moon">
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: TITAN -->
+        <div class="section-card">
+            <h2>3. TARGET DESTINATION: TITAN (SATURN)</h2>
+            <div class="content-flex">
+                <div class="content-text">
+                    <p>Titan is Saturn's largest moon and the only moon in the Solar System with a dense nitrogen-rich atmosphere and stable surface bodies of liquid hydrocarbons (methane and ethane seas).</p>
+                    <ul>
+                        <li><strong>Past & Present Missions:</strong> The ESA <em>Huygens</em> probe successfully parachuted through Titan's atmosphere and landed on its surface in January 2005, revealing organic tholin dunes.</li>
+                        <li><strong>Future Missions:</strong> NASA's upcoming **Dragonfly** mission is a nuclear-powered rotorcraft (scheduled for launch in July 2028 and arrival at Titan in 2034) designed to hop across multiple locations in the Shangri-La dune fields to study prebiotic chemical evolution.</li>
+                    </ul>
+                </div>
+                <div class="content-media">
+                    <img src="titan.jpg" alt="Titan Moon">
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: 16 PSYCHE -->
+        <div class="section-card">
+            <h2>4. TARGET DESTINATION: 16 PSYCHE (ASTEROID BELT)</h2>
+            <div class="content-flex">
+                <div class="content-text">
+                    <p>Located in the main asteroid belt between Mars and Jupiter, 16 Psyche is a unique metallic asteroid. Unlike rocky or icy bodies, scientists believe Psyche is the exposed nickel-iron core of an early planetesimal, offering humanity a direct window into the inaccessible molten cores of terrestrial planets like Earth.</p>
+                    <ul>
+                        <li><strong>Current Status:</strong> NASA's **Psyche** spacecraft launched in October 2023, performed a Mars gravity assist flyby in May 2026, and is journeying toward orbital insertion in August 2029.</li>
+                        <li><strong>Key Technologies:</strong> It is the first interplanetary mission to utilize solar-powered Hall-effect thrusters for deep-space propulsion and test deep-space optical laser communications.</li>
+                    </ul>
+                </div>
+                <div class="content-media">
+                    <img src="psyche.jpg" alt="16 Psyche Asteroid">
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 5: NASA VIDEO BRIEFING ROOM -->
+        <div class="section-card">
+            <h2>5. OFFICIAL NASA MISSION BRIEFINGS</h2>
+            <p>Explore official mission overviews and simulation walkthroughs provided by NASA Jet Propulsion Laboratory (JPL):</p>
+            
+            <div class="video-grid">
+                <!-- Europa Video -->
+                <div class="video-box">
+                    <h4>Europa Clipper: Journey to Jupiter's Ocean Moon</h4>
+                    <div class="iframe-container">
+                        <iframe src="https://www.youtube-nocookie.com/embed/q88fSdGMbys" title="Europa Clipper Mission Overview" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <!-- Titan Video -->
+                <div class="video-box">
+                    <h4>Dragonfly: Exploring Saturn's Organic Moon Titan</h4>
+                    <div class="iframe-container">
+                        <iframe src="https://www.youtube-nocookie.com/embed/iltPgUQiPtw" title="Titan Dragonfly Mission Overview" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <!-- Psyche Video -->
+                <div class="video-box">
+                    <h4>NASA's Psyche Mission: Journey to a Metal World</h4>
+                    <div class="iframe-container">
+                        <iframe src="https://www.youtube-nocookie.com/embed/aExTQGcIGKo" title="NASA Psyche Mission Overview" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 40px;">
+            <a href="index.html" class="nav-back">&larr; RETURN TO MISSION CONTROL HANGAR</a>
+        </div>
+    </div>
+
+    <script>
+        // Interactive Starfield Background Script matching app.js vibe
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        const numStars = 200;
+        let centerX = window.innerWidth / 2;
+        let centerY = window.innerHeight / 2;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            centerX = canvas.width / 2;
+            centerY = canvas.height / 2;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: (Math.random() - 0.5) * canvas.width * 2,
+                y: (Math.random() - 0.5) * canvas.height * 2,
+                z: Math.random() * canvas.width,
+                prevZ: 0
+            });
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(2, 4, 8, 0.4)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < stars.length; i++) {
+                let s = stars[i];
+                s.prevZ = s.z;
+                s.z -= 1.2;
+
+                if (s.z <= 0) {
+                    s.z = canvas.width;
+                    s.prevZ = s.z;
+                    s.x = (Math.random() - 0.5) * canvas.width * 2;
+                    s.y = (Math.random() - 0.5) * canvas.height * 2;
+                }
+
+                const k = 250 / s.z;
+                const px = s.x * k + centerX;
+                const py = s.y * k + centerY;
+
+                const prevK = 250 / s.prevZ;
+                const prevPx = s.x * prevK + centerX;
+                const prevPy = s.y * prevK + centerY;
+
+                if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
+                    const alpha = Math.min(1, (1 - s.z / canvas.width) * 1.2);
+                    ctx.beginPath();
+                    ctx.moveTo(prevPx, prevPy);
+                    ctx.lineTo(px, py);
+                    ctx.strokeStyle = `rgba(180, 220, 255, ${alpha})`;
+                    ctx.stroke();
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
