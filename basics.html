@@ -29,15 +29,22 @@
             padding: 20px;
             position: relative;
             z-index: 2;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         header {
+            width: 100%;
+            max-width: 1050px;
+            margin: 0 auto 30px auto;
             text-align: center;
             background: rgba(13, 17, 23, 0.85);
             border: 1px solid #30363d;
             padding: 30px;
             border-radius: 8px;
             backdrop-filter: blur(10px);
-            margin-bottom: 30px;
+            box-sizing: border-box;
             box-shadow: 0 0 30px rgba(88, 166, 255, 0.15);
         }
         header h1 {
@@ -52,30 +59,16 @@
             font-size: 0.9rem;
             letter-spacing: 1px;
         }
-        .nav-back {
-            display: inline-block;
-            margin-bottom: 20px;
-            background: #21262d;
-            border: 1px solid #30363d;
-            color: #58a6ff;
-            padding: 8px 16px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 0.85rem;
-            transition: background 0.2s;
-        }
-        .nav-back:hover {
-            background: #30363d;
-            color: white;
-        }
         .section-card {
+            width: 100%;
+            max-width: 1050px;
             background: rgba(13, 17, 23, 0.88);
             border: 1px solid #30363d;
             border-radius: 8px;
             padding: 25px;
             margin-bottom: 25px;
             backdrop-filter: blur(8px);
+            box-sizing: border-box;
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
         .section-card h2 {
@@ -165,8 +158,7 @@
     <canvas id="bgCanvas"></canvas>
 
     <div class="container">
-        <a href="index.html" class="nav-back">&larr; RETURN TO MISSION CONTROL HANGAR</a>
-
+        
         <header>
             <h1>INTERPLANETARY SYSTEMS & MISSION ARCHITECTURE</h1>
             <p>CEYLON INSTITUTE OF SPACE SCIENCE // EDUCATIONAL BRIEFING MANUAL</p>
@@ -264,10 +256,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div style="text-align: center; margin-bottom: 40px;">
-            <a href="index.html" class="nav-back">&larr; RETURN TO MISSION CONTROL HANGAR</a>
         </div>
     </div>
 
