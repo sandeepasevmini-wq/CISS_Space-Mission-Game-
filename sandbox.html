@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics & Systems Sandbox // Module 03 - CISS</title>
+    <link rel="icon" type="image/png" href="CISS.png">
+
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background-color: #020408;
+            color: #e6edf3;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+        }
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        header {
+            background: rgba(13, 17, 23, 0.94);
+            border-bottom: 1px solid #30363d;
+            padding: 20px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        .header-title h1 {
+            margin: 0;
+            color: #3fb950;
+            font-size: 1.45rem;
+            letter-spacing: 1px;
+        }
+        .header-title p {
+            margin: 4px 0 0 0;
+            color: #8b949e;
+            font-size: 0.8rem;
+        }
+        .back-btn {
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+            padding: 10px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+        .back-btn:hover {
+            border-color: #3fb950;
+            color: #3fb950;
+        }
+        .container {
+            max-width: 1260px;
+            margin: 24px auto;
+            padding: 0 20px 50px 20px;
+        }
+        .labs-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .lab-btn {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-left: 4px solid #3fb950;
+            color: #e6edf3;
+            padding: 12px 14px;
+            border-radius: 6px;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+        .lab-btn:hover {
+            border-color: #3fb950;
+            background: #1c242b;
+        }
+        .lab-btn strong {
+            display: block;
+            color: #3fb950;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+        .lab-btn span {
+            font-size: 0.75rem;
+            color: #8b949e;
+        }
+        .sandbox-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.25fr;
+            gap: 20px;
+        }
+        @media (max-width: 1024px) {
+            .sandbox-grid { grid-template-columns: 1fr; }
+        }
+        .panel {
+            background: rgba(13, 17, 23, 0.94);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .panel h2 {
+            margin-top: 0;
+            font-size: 1rem;
+            color: #3fb950;
+            border-bottom: 1px solid #21262d;
+            padding-bottom: 8px;
+        }
+        .control-row {
+            margin-bottom: 14px;
+        }
+        .control-row label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: #c9d1d9;
+            margin-bottom: 5px;
+        }
+        .control-row label span {
+            color: #58a6ff;
+            font-weight: bold;
+        }
+        .control-row input[type="range"], .control-row select, .control-row input[type="number"] {
+            width: 100%;
+            background: #161b22;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+            padding: 7px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.82rem;
+        }
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .telem-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        .telem-card small {
+            display: block;
+            font-size: 0.7rem;
+            color: #8b949e;
+            margin-bottom: 3px;
+        }
+        .telem-card strong {
+            font-size: 0.95rem;
+            color: #e6edf3;
+        }
+        #sandboxCanvas {
+            width: 100%;
+            height: 270px;
+            background: #020408;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            display: block;
+        }
+        .lab-notes {
+            margin-top: 14px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #c9d1d9;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bgCanvas"></canvas>
+
+    <header>
+        <div class="header-title">
+            <span style="font-size: 0.72rem; color: #3fb950; letter-spacing: 1.5px;">UNRESTRICTED LAB // MODULE 03</span>
+            <h1>PHYSICS &amp; SYSTEMS SANDBOX</h1>
+            <p>Experiment without budget or mass limits, customize planetary physics, and run guided labs.</p>
+        </div>
+        <!-- In sandbox.html -->
+<a href="index.html?skipLoader=true" class="back-btn">&larr; RETURN TO MAIN ARCHITECT</a>
+    </header>
+
+    <div class="container">
+        <!-- GUIDED INTERACTIVE LAB PRESETS -->
+        <div class="labs-bar">
+            <button class="lab-btn" onclick="loadGuidedLab('solar_law')">
+                <strong>LAB 01: INVERSE-SQUARE SOLAR LAW</strong>
+                <span>Test why Solar Arrays fail past 5.0 AU (I &propto; 1/r&sup2;) vs Nuclear RTG.</span>
+            </button>
+            <button class="lab-btn" onclick="loadGuidedLab('radiation_torus')">
+                <strong>LAB 02: JOVIAN RADIATION STRESS TEST</strong>
+                <span>Crank radiation to 95 krad and calibrate shielding thickness.</span>
+            </button>
+            <button class="lab-btn" onclick="loadGuidedLab('rocket_eq')">
+                <strong>LAB 03: TSIOLKOVSKY &Delta;v &amp; PROPULSION</strong>
+                <span>Adjust Propellant Mass &amp; Specific Impulse (Isp) for high-g capture.</span>
+            </button>
+            <button class="lab-btn" onclick="loadGuidedLab('deep_comms')">
+                <strong>LAB 04: DEEP-SPACE SIGNAL ATTENUATION</strong>
+                <span>Compare LGA, HGA &amp; Optical Laser bandwidth at 25 AU.</span>
+            </button>
+        </div>
+
+        <div class="sandbox-grid">
+            <!-- COLUMN 1: UNRESTRICTED SPACECRAFT ARCHITECT -->
+            <div>
+                <div class="panel">
+                    <h2>01. UNRESTRICTED SPACECRAFT BUILDER</h2>
+                    <p style="font-size:0.75rem; color:#3fb950; margin-top:-4px;">[BUDGET &amp; MASS CAPS DISABLED]</p>
+
+                    <div class="control-row">
+                        <label>POWER GENERATOR:</label>
+                        <select id="sb-power" onchange="updateSandbox()">
+                            <option value="Solar">Solar Arrays (500W @ 1 AU | Scales by 1/r&sup2;)</option>
+                            <option value="RTG">Nuclear RTG (650W Constant Deep-Space Output)</option>
+                            <option value="Fission">Kilopower Fission Reactor (2,500W Constant)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-row">
+                        <label>PROPULSION ENGINE (Specific Impulse):</label>
+                        <select id="sb-engine" onchange="updateSandbox()">
+                            <option value="320">Chemical Bipropellant (Isp = 320 s)</option>
+                            <option value="450">Cryogenic LH2/LOX (Isp = 450 s)</option>
+                            <option value="3100">Xenon Ion Hall Thruster (Isp = 3,100 s)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-row">
+                        <label>DRY SPACECRAFT MASS: <span id="val-dry">800 kg</span></label>
+                        <input type="range" id="sb-dry" min="200" max="5000" step="50" value="800" oninput="updateSandbox()">
+                    </div>
+
+                    <div class="control-row">
+                        <label>PROPELLANT MASS: <span id="val-fuel">1200 kg</span></label>
+                        <input type="range" id="sb-fuel" min="100" max="12000" step="100" value="1200" oninput="updateSandbox()">
+                    </div>
+
+                    <div class="control-row">
+                        <label>RADIATION SHIELDING: <span id="val-shield">60%</span></label>
+                        <input type="range" id="sb-shield" min="0" max="100" value="60" oninput="updateSandbox()">
+                    </div>
+
+                    <div class="control-row">
+                        <label>COMMUNICATIONS LINK:</label>
+                        <select id="sb-comm" onchange="updateSandbox()">
+                            <option value="LGA">Low-Gain Omni (50 kbps @ 1 AU)</option>
+                            <option value="HGA" selected>High-Gain Dish (2,000 kbps @ 1 AU)</option>
+                            <option value="Laser">Deep-Space Optical Laser (15,000 kbps @ 1 AU)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 2: CUSTOM PLANETARY & ORBITAL PHYSICS -->
+            <div>
+                <div class="panel">
+                    <h2>02. PLANETARY &amp; ORBITAL ENVIRONMENT</h2>
+
+                    <div class="control-row">
+                        <label>ORBITAL DISTANCE FROM SUN: <span id="val-au">5.2 AU</span></label>
+                        <input type="range" id="sb-au" min="0.4" max="30.0" step="0.1" value="5.2" oninput="updateSandbox()">
+                    </div>
+
+                    <div class="control-row">
+                        <label>TARGET SURFACE GRAVITY (g): <span id="val-grav">1.31 m/s&sup2;</span></label>
+                        <input type="range" id="sb-grav" min="0.1" max="25.0" step="0.1" value="1.31" oninput="updateSandbox()">
+                    </div>
+
+                    <div class="control-row">
+                        <label>MAGNETOSPHERIC RADIATION: <span id="val-rad">75 krad</span></label>
+                        <input type="range" id="sb-rad" min="0" max="100" value="75" oninput="updateSandbox()">
+                    </div>
+
+                    <div class="control-row">
+                        <label>ATMOSPHERIC DENSITY (&rho;): <span id="val-atmo">0.00 kg/m&sup3;</span></label>
+                        <input type="range" id="sb-atmo" min="0" max="5.0" step="0.05" value="0" oninput="updateSandbox()">
+                    </div>
+
+                    <div class="control-row">
+                        <label>ORBITAL VELOCITY MULTIPLIER: <span id="val-vel">1.0x</span></label>
+                        <input type="range" id="sb-vel" min="0.2" max="2.5" step="0.1" value="1.0" oninput="updateSandbox()">
+                    </div>
+
+                    <div class="lab-notes" id="lab-guide-text">
+                        <strong>ACTIVE LAB GUIDE:</strong> Adjust any spacecraft or planetary physics slider above to observe real-time changes in Tsiolkovsky &Delta;v, Inverse-Square Solar Flux, Radiation Dose Survival, and Orbital Trajectory.
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 3: REAL-TIME TELEMETRY & GMAT ASTRODYNAMICS ENGINE -->
+            <div>
+                <div class="panel">
+                    <h2>03. LIVE PHYSICS TELEMETRY &amp; GMAT ENGINE</h2>
+
+                    <div class="telemetry-grid">
+                        <div class="telem-card">
+                            <small>TSIOLKOVSKY &Delta;v CAPACITY</small>
+                            <strong id="out-dv" style="color:#58a6ff;">0 m/s</strong>
+                        </div>
+                        <div class="telem-card">
+                            <small>REQUIRED CAPTURE &Delta;v</small>
+                            <strong id="out-req-dv">0 m/s</strong>
+                        </div>
+                        <div class="telem-card">
+                            <small>SOLAR FLUX / DELIVERED POWER</small>
+                            <strong id="out-power">0 W</strong>
+                        </div>
+                        <div class="telem-card">
+                            <small>NET RADIATION DOSE (AVIONICS)</small>
+                            <strong id="out-rad">0 krad</strong>
+                        </div>
+                        <div class="telem-card">
+                            <small>EFFECTIVE DOWNLINK (1/r&sup2;)</small>
+                            <strong id="out-kbps">0 kbps</strong>
+                        </div>
+                        <div class="telem-card">
+                            <small>SYSTEMS INTEGRITY VERDICT</small>
+                            <strong id="out-verdict" style="color:#3fb950;">NOMINAL</strong>
+                        </div>
+                    </div>
+
+                    <canvas id="sandboxCanvas" width="520" height="270"></canvas>
+                </div>
+
+                <!-- GMAT-Inspired Astrodynamics & Trade-Off Extension Panel -->
+                <div class="panel">
+                    <h2 style="color: #58a6ff;">04. GMAT OPTIMIZATION TRADE-STUDY</h2>
+                    <div style="font-size: 0.8rem; color: #8b949e; margin-bottom: 10px;">
+                        Enterprise-level orbital trade optimization modeled on NASA GMAT architecture principles.
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                        <div>
+                            <label style="font-size: 0.75rem; color: #c9d1d9; display: block; margin-bottom: 4px;">Target Transfer Delta-V Requirement (m/s):</label>
+                            <input type="number" id="gmatTargetDv" value="5200" style="background: #161b22; border: 1px solid #30363d; color: #e6edf3; padding: 6px; border-radius: 4px; font-family: monospace; width: 100%;">
+                        </div>
+                        
+                        <button onclick="runGmatOptimization()" style="background: #238636; color: white; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; font-size: 0.85rem; width: 100%; margin-top: 4px;">
+                            Run GMAT Optimization Trade-Study
+                        </button>
+                    </div>
+
+                    <div style="background: #161b22; padding: 10px; border-radius: 6px; border: 1px solid #30363d; font-size: 0.78rem; line-height: 1.5; margin-top: 12px;">
+                        <div style="color: #58a6ff; font-weight: bold; margin-bottom: 4px;">TRADE-OFF METRICS:</div>
+                        <div>Initial Wet Mass ($m_0$): <span id="gmatOutMass" style="color: #c9d1d9;">--</span></div>
+                        <div>Mass Ratio ($m_0 / m_f$): <span id="gmatOutRatio" style="color: #c9d1d9;">--</span></div>
+                        <div>Feasibility Status: <span id="gmatOutFeas" style="color: #f0a500; font-weight: bold;">Awaiting Simulation</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let orbitAngle = 0;
+        let simState = {
+            au: 5.2, grav: 1.31, rad: 75, atmo: 0, vel: 1.0,
+            dv: 0, reqDv: 0, power: 0, netRad: 0, kbps: 0, healthy: true
+        };
+
+        function loadGuidedLab(labId) {
+            if (labId === 'solar_law') {
+                document.getElementById('sb-power').value = 'Solar';
+                document.getElementById('sb-au').value = 9.5;
+                document.getElementById('sb-rad').value = 15;
+                document.getElementById('sb-grav').value = 1.35;
+                document.getElementById('sb-atmo').value = 1.2;
+                document.getElementById('lab-guide-text').innerHTML =
+                    "<strong>LAB 01 (INVERSE-SQUARE LAW):</strong> At 9.5 AU (Saturn/Titan), solar irradiance drops to 1/(9.5&sup2;) = <strong>1.1%</strong> of Earth levels! Switch Power Generator from <em>Solar Arrays</em> to <em>Nuclear RTG</em> to restore full power.";
+            } else if (labId === 'radiation_torus') {
+                document.getElementById('sb-power').value = 'RTG';
+                document.getElementById('sb-au').value = 5.2;
+                document.getElementById('sb-rad').value = 95;
+                document.getElementById('sb-shield').value = 40;
+                document.getElementById('lab-guide-text').innerHTML =
+                    "<strong>LAB 02 (JOVIAN RADIATION TORUS):</strong> Unshielded avionics fail above <strong>25 krad</strong>. Increase <em>Radiation Shielding</em> until Net Radiation Dose drops below 25 krad.";
+            } else if (labId === 'rocket_eq') {
+                document.getElementById('sb-engine').value = '320';
+                document.getElementById('sb-dry').value = 1500;
+                document.getElementById('sb-fuel').value = 1200;
+                document.getElementById('sb-grav').value = 18.0;
+                document.getElementById('lab-guide-text').innerHTML =
+                    "<strong>LAB 03 (TSIOLKOVSKY ROCKET EQUATION):</strong> &Delta;v = I<sub>sp</sub> &middot; g<sub>0</sub> &middot; ln(m<sub>0</sub> / m<sub>f</sub>). High surface gravity requires massive &Delta;v. Increase Propellant Mass or switch to the <em>Xenon Ion Hall Thruster</em>.";
+            } else if (labId === 'deep_comms') {
+                document.getElementById('sb-comm').value = 'LGA';
+                document.getElementById('sb-au').value = 25.0;
+                document.getElementById('sb-power').value = 'RTG';
+                document.getElementById('lab-guide-text').innerHTML =
+                    "<strong>LAB 04 (DEEP-SPACE SIGNAL ATTENUATION):</strong> Radio signal strength decays with distance squared (1/r&sup2;). At 25 AU, Low-Gain Antennas drop below 1 kbps. Upgrade to <em>High-Gain Dish</em> or <em>Optical Laser</em>.";
+            }
+            updateSandbox();
+        }
+
+        function updateSandbox() {
+            const powerType = document.getElementById('sb-power').value;
+            const isp = parseFloat(document.getElementById('sb-engine').value);
+            const dryMass = parseFloat(document.getElementById('sb-dry').value);
+            const fuelMass = parseFloat(document.getElementById('sb-fuel').value);
+            const shieldPct = parseFloat(document.getElementById('sb-shield').value);
+            const commType = document.getElementById('sb-comm').value;
+
+            const au = parseFloat(document.getElementById('sb-au').value);
+            const grav = parseFloat(document.getElementById('sb-grav').value);
+            const rad = parseFloat(document.getElementById('sb-rad').value);
+            const atmo = parseFloat(document.getElementById('sb-atmo').value);
+            const vel = parseFloat(document.getElementById('sb-vel').value);
+
+            document.getElementById('val-dry').innerText = `${dryMass} kg`;
+            document.getElementById('val-fuel').innerText = `${fuelMass} kg`;
+            document.getElementById('val-shield').innerText = `${shieldPct}%`;
+            document.getElementById('val-au').innerText = `${au.toFixed(1)} AU`;
+            document.getElementById('val-grav').innerText = `${grav.toFixed(2)} m/s²`;
+            document.getElementById('val-rad').innerText = `${rad} krad`;
+            document.getElementById('val-atmo').innerText = `${atmo.toFixed(2)} kg/m³`;
+            document.getElementById('val-vel').innerText = `${vel.toFixed(1)}x`;
+
+            // 1. Tsiolkovsky Rocket Equation
+            const wetMass = dryMass + fuelMass + (shieldPct * 4);
+            const dryTotal = dryMass + (shieldPct * 4);
+            const dv = Math.round(isp * 9.80665 * Math.log(wetMass / dryTotal));
+
+            // Required Delta-V scales with target gravity + orbital distance + atmospheric drag
+            const reqDv = Math.round(1200 + (grav * 380) + (au * 95) + (atmo * 420));
+
+            // 2. Power Output (Inverse-Square Law for Solar)
+            let deliveredPower = 0;
+            if (powerType === 'Solar') {
+                deliveredPower = Math.round(500 / (au * au));
+            } else if (powerType === 'RTG') {
+                deliveredPower = 650;
+            } else {
+                deliveredPower = 2500;
+            }
+
+            // 3. Net Radiation Dose after Shielding Attenuation
+            const netRad = +(rad * (1 - (shieldPct / 115))).toFixed(1);
+
+            // 4. Downlink Bandwidth Attenuation over AU
+            const baseKbps = commType === 'LGA' ? 50 : commType === 'HGA' ? 2000 : 15000;
+            const effectiveKbps = +(baseKbps / Math.max(1, (au * au) / 4)).toFixed(1);
+
+            // Evaluate Health
+            let warnings = [];
+            if (dv < reqDv) warnings.push("INSUFFICIENT Δv");
+            if (deliveredPower < 250) warnings.push("POWER BROWNOUT");
+            if (netRad > 25) warnings.push("RADIATION DAMAGE");
+            if (effectiveKbps < 10) warnings.push("COMMS BLACKOUT");
+
+            const healthy = warnings.length === 0;
+
+            document.getElementById('out-dv').innerText = `${dv.toLocaleString()} m/s`;
+            document.getElementById('out-dv').style.color = dv >= reqDv ? '#3fb950' : '#f85149';
+            document.getElementById('out-req-dv').innerText = `${reqDv.toLocaleString()} m/s`;
+
+            document.getElementById('out-power').innerText = `${deliveredPower} W`;
+            document.getElementById('out-power').style.color = deliveredPower >= 250 ? '#3fb950' : '#f85149';
+
+            document.getElementById('out-rad').innerText = `${netRad} krad (Max 25)`;
+            document.getElementById('out-rad').style.color = netRad <= 25 ? '#3fb950' : '#f85149';
+
+            document.getElementById('out-kbps').innerText = `${effectiveKbps} kbps`;
+            document.getElementById('out-kbps').style.color = effectiveKbps >= 10 ? '#3fb950' : '#f85149';
+
+            const verdictEl = document.getElementById('out-verdict');
+            verdictEl.innerText = healthy ? "ALL SYSTEMS NOMINAL" : warnings.join(" // ");
+            verdictEl.style.color = healthy ? "#3fb950" : "#f85149";
+
+            simState = { au, grav, rad, atmo, vel, dv, reqDv, power: deliveredPower, netRad, kbps: effectiveKbps, healthy };
+        }
+
+        // --- GMAT OPTIMIZATION TRADE-STUDY LOGIC ---
+        function runGmatOptimization() {
+            const dryMass = parseFloat(document.getElementById('sb-dry').value) || 0;
+            const fuelMass = parseFloat(document.getElementById('sb-fuel').value) || 0;
+            const shieldPct = parseFloat(document.getElementById('sb-shield').value) || 0;
+            const targetReqDv = parseFloat(document.getElementById('gmatTargetDv').value) || 5200;
+
+            const initialMass = dryMass + fuelMass + (shieldPct * 4);
+            const finalMass = dryMass + (shieldPct * 4);
+            const massRatio = initialMass / finalMass;
+
+            const isFeasible = simState.dv >= targetReqDv;
+
+            document.getElementById('gmatOutMass').innerText = `${initialMass.toFixed(1)} kg`;
+            document.getElementById('gmatOutRatio').innerText = massRatio.toFixed(3);
+            
+            const feasEl = document.getElementById('gmatOutFeas');
+            if (isFeasible) {
+                feasEl.style.color = '#3fb950';
+                feasEl.innerText = 'OPTIMIZED & FEASIBLE (Mission Go)';
+            } else {
+                feasEl.style.color = '#f85149';
+                feasEl.innerText = 'INSUFFICIENT DELTA-V (Add Propellant)';
+            }
+        }
+
+        // --- ORBITAL SANDBOX VISUALIZER ---
+        const sCanvas = document.getElementById('sandboxCanvas');
+        const sCtx = sCanvas.getContext('2d');
+
+        function drawSandboxOrbit() {
+            const w = sCanvas.width;
+            const h = sCanvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            sCtx.fillStyle = '#020408';
+            sCtx.fillRect(0, 0, w, h);
+
+            // Magnetosphere / Radiation Aura
+            if (simState.rad > 0) {
+                const radRadius = 48 + (simState.rad * 0.65);
+                const grad = sCtx.createRadialGradient(cx, cy, 18, cx, cy, radRadius);
+                grad.addColorStop(0, `rgba(248, 81, 73, ${simState.rad / 220})`);
+                grad.addColorStop(1, 'rgba(248, 81, 73, 0)');
+                sCtx.fillStyle = grad;
+                sCtx.beginPath();
+                sCtx.arc(cx, cy, radRadius, 0, Math.PI * 2);
+                sCtx.fill();
+            }
+
+            // Atmosphere Halo
+            if (simState.atmo > 0) {
+                sCtx.strokeStyle = `rgba(88, 166, 255, ${Math.min(0.85, simState.atmo / 3)})`;
+                sCtx.lineWidth = 2 + simState.atmo * 2;
+                sCtx.beginPath();
+                sCtx.arc(cx, cy, 28, 0, Math.PI * 2);
+                sCtx.stroke();
+            }
+
+            // Central Planetary Body
+            const planetR = Math.min(34, 16 + simState.grav * 0.7);
+            sCtx.beginPath();
+            sCtx.arc(cx, cy, planetR, 0, Math.PI * 2);
+            sCtx.fillStyle = simState.au > 8 ? '#f0a500' : simState.au > 4 ? '#a6e3e9' : '#58a6ff';
+            sCtx.fill();
+
+            // Orbit Path
+            const orbitRx = 140;
+            const orbitRy = 85;
+            sCtx.setLineDash([4, 4]);
+            sCtx.strokeStyle = '#30363d';
+            sCtx.lineWidth = 1;
+            sCtx.beginPath();
+            sCtx.ellipse(cx, cy, orbitRx, orbitRy, 0, 0, Math.PI * 2);
+            sCtx.stroke();
+            sCtx.setLineDash([]);
+
+            // Spacecraft Position
+            const sx = cx + Math.cos(orbitAngle) * orbitRx;
+            const sy = cy + Math.sin(orbitAngle) * orbitRy;
+
+            // Shielding Ring around Spacecraft
+            sCtx.strokeStyle = simState.healthy ? '#3fb950' : '#f85149';
+            sCtx.lineWidth = 1.5;
+            sCtx.beginPath();
+            sCtx.arc(sx, sy, 11, 0, Math.PI * 2);
+            sCtx.stroke();
+
+            // Spacecraft Core
+            sCtx.fillStyle = '#d4af37';
+            sCtx.fillRect(sx - 5, sy - 5, 10, 10);
+
+            // HUD Telemetry Overlay inside Canvas
+            sCtx.fillStyle = '#8b949e';
+            sCtx.font = '11px monospace';
+            sCtx.fillText(`SOLAR DIST: ${simState.au.toFixed(1)} AU | GRAVITY: ${simState.grav.toFixed(2)} m/s²`, 12, 20);
+            sCtx.fillText(`RADIATION FLUX: ${simState.rad} krad | ATMO: ${simState.atmo.toFixed(2)} kg/m³`, 12, h - 12);
+
+            const angularSpeed = (0.012 + (simState.grav * 0.0012)) * simState.vel;
+            orbitAngle += angularSpeed;
+
+            requestAnimationFrame(drawSandboxOrbit);
+        }
+
+        // Background Starfield
+        const bg = document.getElementById('bgCanvas');
+        const bctx = bg.getContext('2d');
+        bg.width = window.innerWidth;
+        bg.height = window.innerHeight;
+        bctx.fillStyle = '#020408';
+        bctx.fillRect(0, 0, bg.width, bg.height);
+        bctx.fillStyle = 'rgba(180,220,255,0.55)';
+        for (let i = 0; i < 140; i++) {
+            bctx.beginPath();
+            bctx.arc(Math.random() * bg.width, Math.random() * bg.height, Math.random() * 1.4, 0, Math.PI * 2);
+            bctx.fill();
+        }
+
+        updateSandbox();
+        drawSandboxOrbit();
+    </script>
+</body>
+</html>

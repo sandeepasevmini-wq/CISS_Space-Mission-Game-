@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitive Scenarios // Module 02 - CISS</title>
+    <link rel="icon" type="image/png" href="CISS.png">
+
+    <!-- FIREBASE MULTIPLAYER ENGINES (v8 Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background-color: #020408;
+            color: #e6edf3;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        header {
+            background: rgba(13, 17, 23, 0.92);
+            border-bottom: 1px solid #30363d;
+            padding: 20px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        .header-title h1 {
+            margin: 0;
+            color: #58a6ff;
+            font-size: 1.45rem;
+            letter-spacing: 1px;
+        }
+        .header-title p {
+            margin: 4px 0 0 0;
+            color: #8b949e;
+            font-size: 0.8rem;
+        }
+        .back-btn {
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+            padding: 10px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+        .back-btn:hover {
+            border-color: #58a6ff;
+            color: #58a6ff;
+        }
+        .container {
+            max-width: 1240px;
+            margin: 24px auto;
+            padding: 0 20px 50px 20px;
+        }
+        .panel {
+            background: rgba(13, 17, 23, 0.94);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .panel h2 {
+            margin-top: 0;
+            font-size: 1.05rem;
+            color: #58a6ff;
+            border-bottom: 1px solid #21262d;
+            padding-bottom: 8px;
+        }
+        .contract-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 14px;
+            margin-top: 12px;
+        }
+        .contract-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .contract-card.active {
+            border-color: #58a6ff;
+            box-shadow: 0 0 14px rgba(88, 166, 255, 0.2);
+            background: #1c2430;
+        }
+        .contract-card h3 {
+            margin: 0 0 6px 0;
+            font-size: 0.95rem;
+            color: #e6edf3;
+        }
+        .contract-specs {
+            font-size: 0.78rem;
+            color: #8b949e;
+            line-height: 1.5;
+        }
+        .teams-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 860px) {
+            .teams-grid { grid-template-columns: 1fr; }
+        }
+        .team-deck {
+            background: rgba(13, 17, 23, 0.95);
+            border: 1px solid #30363d;
+            border-top: 4px solid #58a6ff;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .team-deck.omega {
+            border-top-color: #f0883e;
+        }
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            border-bottom: 1px solid #21262d;
+            padding-bottom: 8px;
+        }
+        .team-header input {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 1rem;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 65%;
+        }
+        .status-pill {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            background: #238636;
+            color: white;
+        }
+        .status-pill.invalid {
+            background: #da3633;
+        }
+        .field-group {
+            margin-bottom: 12px;
+        }
+        .field-group label {
+            display: block;
+            font-size: 0.78rem;
+            color: #8b949e;
+            margin-bottom: 4px;
+        }
+        .field-group select, .field-group input[type="range"] {
+            width: 100%;
+            background: #161b22;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.85rem;
+        }
+        .metrics-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 14px;
+            text-align: center;
+            font-size: 0.78rem;
+        }
+        .metrics-bar strong {
+            display: block;
+            font-size: 0.92rem;
+            margin-top: 2px;
+            color: #58a6ff;
+        }
+        .race-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .btn-primary {
+            background: #238636;
+            border: 1px solid #2ea043;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+        .btn-primary:hover { background: #2ea043; }
+        .btn-secondary {
+            background: #1f6feb;
+            border: 1px solid #388bfd;
+            color: white;
+            padding: 9px 14px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        #raceCanvas {
+            width: 100%;
+            height: 260px;
+            background: #020408;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            display: block;
+        }
+        .winner-banner {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 6px;
+            background: #161b22;
+            border: 1px solid #58a6ff;
+            display: none;
+            line-height: 1.6;
+        }
+        .sync-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            font-size: 0.82rem;
+        }
+        .sync-bar input {
+            background: #161b22;
+            border: 1px solid #30363d;
+            color: white;
+            padding: 7px 10px;
+            border-radius: 4px;
+            font-family: inherit;
+            width: 130px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bgCanvas"></canvas>
+
+<header>
+        <div class="header-title">
+            <span style="font-size: 0.72rem; color: #58a6ff; letter-spacing: 1.5px;">MULTI-TEAM CONTRACT // MODULE 02</span>
+            <h1>COMPETITIVE SCENARIOS</h1>
+            <p>Design rival spacecraft architectures for shared mission contracts and race head-to-head.</p>
+        </div>
+        <!-- Updated link with skipLoader=true parameter -->
+        <!-- In competitive.html -->
+<a href="index.html?skipLoader=true" class="back-btn">&larr; RETURN TO MAIN ARCHITECT</a>
+    </header>
+
+    <div class="container">
+        <!-- OPTIONAL ONLINE ROOM SYNC -->
+        <div class="panel">
+            <h2>01. NETWORK MODE (LOCAL HEAD-TO-HEAD OR LIVE FIREBASE ROOM)</h2>
+            <div class="sync-bar">
+                <span>Play locally side-by-side OR sync two browsers via Room Code:</span>
+                <button class="btn-secondary" onclick="createCompetitiveRoom()">📡 HOST RACE ROOM</button>
+                <input type="text" id="comp-room-input" placeholder="4-Digit Code">
+                <button class="btn-secondary" style="background:#2ea043; border-color:#238636;" onclick="joinCompetitiveRoom()">🚀 JOIN ROOM</button>
+                <span id="comp-room-status" style="color: #a5d6ff; font-weight: bold;">MODE: LOCAL DUAL-DECK</span>
+            </div>
+        </div>
+
+        <!-- SHARED CONTRACT SELECTION -->
+        <div class="panel">
+            <h2>02. SELECT SHARED AGENCY CONTRACT</h2>
+            <div class="contract-grid" id="contract-grid">
+                <div class="contract-card active" onclick="selectContract('europa_relay', this)">
+                    <h3>CONTRACT A: EUROPA CRYOBOT RELAY</h3>
+                    <div class="contract-specs">
+                        Target: <strong>Europa (5.2 AU)</strong> | Budget Cap: <strong>$950M</strong><br>
+                        Max Mass: <strong>1600 kg</strong> | Min Power: <strong>350W</strong><br>
+                        Min Shielding: <strong>80%</strong> | Min Comms: <strong>500 kbps</strong>
+                    </div>
+                </div>
+                <div class="contract-card" onclick="selectContract('titan_skimmer', this)">
+                    <h3>CONTRACT B: TITAN METHANE SKIMMER</h3>
+                    <div class="contract-specs">
+                        Target: <strong>Titan (9.5 AU)</strong> | Budget Cap: <strong>$1,100M</strong><br>
+                        Max Mass: <strong>2000 kg</strong> | Min Power: <strong>500W</strong><br>
+                        Min Shielding: <strong>40%</strong> | Min Comms: <strong>100 kbps</strong>
+                    </div>
+                </div>
+                <div class="contract-card" onclick="selectContract('psyche_express', this)">
+                    <h3>CONTRACT C: 16 PSYCHE CORE EXPRESS</h3>
+                    <div class="contract-specs">
+                        Target: <strong>16 Psyche (3.0 AU)</strong> | Budget Cap: <strong>$750M</strong><br>
+                        Max Mass: <strong>1400 kg</strong> | Min Power: <strong>250W</strong><br>
+                        Min Shielding: <strong>30%</strong> | Min Comms: <strong>100 kbps</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIVAL SPACECRAFT ARCHITECTURES -->
+        <div class="teams-grid">
+            <!-- TEAM ALPHA -->
+            <div class="team-deck">
+                <div class="team-header">
+                    <input type="text" id="alpha-name" value="TEAM ALPHA // VANGUARD" oninput="syncTeamsToFirebase()">
+                    <span id="alpha-badge" class="status-pill">CONTRACT READY</span>
+                </div>
+
+                <div class="field-group">
+                    <label>LAUNCH VEHICLE:</label>
+                    <select id="alpha-launcher" onchange="recalcTeams()">
+                        <option value="FalconHeavy">Falcon Heavy ($150M | Max 1500kg)</option>
+                        <option value="SLS">Space Launch System ($800M | Max 3000kg)</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>POWER GENERATOR:</label>
+                    <select id="alpha-power" onchange="recalcTeams()">
+                        <option value="Solar">Solar Arrays ($50M | 200kg | 200W)</option>
+                        <option value="RTG" selected>Nuclear RTG ($200M | 150kg | 600W)</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>COMMUNICATIONS:</label>
+                    <select id="alpha-comm" onchange="recalcTeams()">
+                        <option value="LGA">Low-Gain Antenna ($20M | 50kg | 10 kbps)</option>
+                        <option value="HGA" selected>High-Gain Dish ($80M | 120kg | 500 kbps)</option>
+                        <option value="Laser">Laser Comms ($180M | 80kg | 5000 kbps)</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>SCIENTIFIC PAYLOAD:</label>
+                    <select id="alpha-inst" onchange="recalcTeams()">
+                        <option value="Camera">Optical Camera ($40M | 60kg | 50 Sci)</option>
+                        <option value="Radar" selected>Ice-Penetrating Radar ($150M | 220kg | 120 Sci)</option>
+                        <option value="Spectrometer">Mass Spectrometer ($110M | 100kg | 90 Sci)</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>TRAJECTORY PROFILE:</label>
+                    <select id="alpha-route" onchange="recalcTeams()">
+                        <option value="Direct" selected>Direct Burn (Fast Transit | Standard Cost)</option>
+                        <option value="GravityAssist">Gravity Assist (Slower Transit | -$50M Discount)</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>RADIATION SHIELDING: <span id="alpha-shield-val">80</span>%</label>
+                    <input type="range" id="alpha-shield" min="10" max="100" value="80" oninput="recalcTeams()">
+                </div>
+
+                <div class="metrics-bar">
+                    <div>COST<strong id="alpha-cost">$0M</strong></div>
+                    <div>MASS<strong id="alpha-mass">0 kg</strong></div>
+                    <div>POWER<strong id="alpha-pwr">0W</strong></div>
+                    <div>COMMS<strong id="alpha-kbps">0 kbps</strong></div>
+                </div>
+            </div>
+
+            <!-- TEAM OMEGA -->
+            <div class="team-deck omega">
+                <div class="team-header">
+                    <input type="text" id="omega-name" value="TEAM OMEGA // HYPERION" oninput="syncTeamsToFirebase()">
+                    <span id="omega-badge" class="status-pill">CONTRACT READY</span>
+                </div>
+
+                <div class="field-group">
+                    <label>LAUNCH VEHICLE:</label>
+                    <select id="omega-launcher" onchange="recalcTeams()">
+                        <option value="FalconHeavy" selected>Falcon Heavy ($150M | Max 1500kg)</option>
+                        <option value="SLS">Space Launch System ($800M | Max 3000kg)</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>POWER GENERATOR:</label>
+                    <select id="omega-power" onchange="recalcTeams()">
+                        <option value="Solar">Solar Arrays ($50M | 200kg | 200W)</option>
+                        <option value="RTG" selected>Nuclear RTG ($200M | 150kg | 600W)</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>COMMUNICATIONS:</label>
+                    <select id="omega-comm" onchange="recalcTeams()">
+                        <option value="LGA">Low-Gain Antenna ($20M | 50kg | 10 kbps)</option>
+                        <option value="HGA">High-Gain Dish ($80M | 120kg | 500 kbps)</option>
+                        <option value="Laser" selected>Laser Comms ($180M | 80kg | 5000 kbps)</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>SCIENTIFIC PAYLOAD:</label>
+                    <select id="omega-inst" onchange="recalcTeams()">
+                        <option value="Camera">Optical Camera ($40M | 60kg | 50 Sci)</option>
+                        <option value="Radar">Ice-Penetrating Radar ($150M | 220kg | 120 Sci)</option>
+                        <option value="Spectrometer" selected>Mass Spectrometer ($110M | 100kg | 90 Sci)</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>TRAJECTORY PROFILE:</label>
+                    <select id="omega-route" onchange="recalcTeams()">
+                        <option value="Direct">Direct Burn (Fast Transit | Standard Cost)</option>
+                        <option value="GravityAssist" selected>Gravity Assist (Slower Transit | -$50M Discount)</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>RADIATION SHIELDING: <span id="omega-shield-val">85</span>%</label>
+                    <input type="range" id="omega-shield" min="10" max="100" value="85" oninput="recalcTeams()">
+                </div>
+
+                <div class="metrics-bar">
+                    <div>COST<strong id="omega-cost" style="color:#f0883e;">$0M</strong></div>
+                    <div>MASS<strong id="omega-mass" style="color:#f0883e;">0 kg</strong></div>
+                    <div>POWER<strong id="omega-pwr" style="color:#f0883e;">0W</strong></div>
+                    <div>COMMS<strong id="omega-kbps" style="color:#f0883e;">0 kbps</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HEAD-TO-HEAD RACE TELEMETRY VIEWPORT -->
+        <div class="panel" style="margin-top: 20px;">
+            <h2>03. HEAD-TO-HEAD INTERPLANETARY RACE TELEMETRY</h2>
+            <div class="race-controls">
+                <span id="race-status" style="color: #8b949e; font-size: 0.85rem;">STATUS: READY ON LAUNCH PAD</span>
+                <button class="btn-primary" onclick="launchCompetitiveRace()">🚀 LAUNCH HEAD-TO-HEAD RACE</button>
+            </div>
+            <canvas id="raceCanvas" width="1100" height="260"></canvas>
+            <div id="winner-banner" class="winner-banner"></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDummyKeyForCompatMode991283",
+            authDomain: "ciss-space-architect.firebaseapp.com",
+            databaseURL: "https://ciss-space-architect-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ciss-space-architect",
+            storageBucket: "ciss-space-architect.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef123456"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const contracts = {
+            europa_relay: { name: "Europa Cryobot Relay", target: "Europa (5.2 AU)", color: "#a6e3e9", budget: 950, maxMass: 1600, reqPower: 350, reqShield: 80, minKbps: 500, distAU: 5.2 },
+            titan_skimmer: { name: "Titan Methane Skimmer", target: "Titan (9.5 AU)", color: "#f0a500", budget: 1100, maxMass: 2000, reqPower: 500, reqShield: 40, minKbps: 100, distAU: 9.5 },
+            psyche_express: { name: "16 Psyche Core Express", target: "16 Psyche (3.0 AU)", color: "#c0c0c0", budget: 750, maxMass: 1400, reqPower: 250, reqShield: 30, minKbps: 100, distAU: 3.0 }
+        };
+
+        const parts = {
+            launcher: { FalconHeavy: { cost: 150, cap: 1500 }, SLS: { cost: 800, cap: 3000 } },
+            power: { Solar: { cost: 50, mass: 200, pwr: 200 }, RTG: { cost: 200, mass: 150, pwr: 600 } },
+            comm: { LGA: { cost: 20, mass: 50, kbps: 10 }, HGA: { cost: 80, mass: 120, kbps: 500 }, Laser: { cost: 180, mass: 80, kbps: 5000 } },
+            inst: { Camera: { cost: 40, mass: 60, sci: 50, reqKbps: 50 }, Radar: { cost: 150, mass: 220, sci: 120, reqKbps: 400 }, Spectrometer: { cost: 110, mass: 100, sci: 90, reqKbps: 250 } }
+        };
+
+        let activeContractKey = 'europa_relay';
+        let raceRunning = false;
+        let alphaProg = 0;
+        let omegaProg = 0;
+        let alphaData = {};
+        let omegaData = {};
+        let compRoom = null;
+        let isRemoteSync = false;
+
+        function selectContract(key, el) {
+            activeContractKey = key;
+            document.querySelectorAll('.contract-card').forEach(c => c.classList.remove('active'));
+            if (el) el.classList.add('active');
+            recalcTeams();
+        }
+
+        function computeTeam(prefix) {
+            const c = contracts[activeContractKey];
+            const l = parts.launcher[document.getElementById(`${prefix}-launcher`).value];
+            const p = parts.power[document.getElementById(`${prefix}-power`).value];
+            const cm = parts.comm[document.getElementById(`${prefix}-comm`).value];
+            const ins = parts.inst[document.getElementById(`${prefix}-inst`).value];
+            const route = document.getElementById(`${prefix}-route`).value;
+            const shield = parseInt(document.getElementById(`${prefix}-shield`).value);
+
+            document.getElementById(`${prefix}-shield-val`).innerText = shield;
+
+            const discount = route === 'GravityAssist' ? 50 : 0;
+            const cost = (l.cost + p.cost + cm.cost + ins.cost + shield * 2) - discount;
+            const mass = p.mass + cm.mass + ins.mass + shield * 5;
+            const effectiveCap = Math.min(c.maxMass, l.cap);
+
+            // Solar inverse-square degradation at target
+            const pwrKey = document.getElementById(`${prefix}-power`).value;
+            const deliveredPwr = pwrKey === 'Solar' ? Math.round(p.pwr * Math.max(0.2, 1 - (c.distAU / 10))) : p.pwr;
+
+            const validBudget = cost <= c.budget;
+            const validMass = mass <= effectiveCap;
+            const isValid = validBudget && validMass;
+
+            document.getElementById(`${prefix}-cost`).innerText = `$${cost}M / $${c.budget}M`;
+            document.getElementById(`${prefix}-cost`).style.color = validBudget ? '#2ea043' : '#f85149';
+
+            document.getElementById(`${prefix}-mass`).innerText = `${mass} / ${effectiveCap}kg`;
+            document.getElementById(`${prefix}-mass`).style.color = validMass ? '#2ea043' : '#f85149';
+
+            document.getElementById(`${prefix}-pwr`).innerText = `${deliveredPwr}W`;
+            document.getElementById(`${prefix}-kbps`).innerText = `${cm.kbps} kbps`;
+
+            const badge = document.getElementById(`${prefix}-badge`);
+            badge.innerText = isValid ? "CONTRACT READY" : "CAP EXCEEDED";
+            badge.className = isValid ? "status-pill" : "status-pill invalid";
+
+            return {
+                name: document.getElementById(`${prefix}-name`).value,
+                cost, mass, effectiveCap, deliveredPwr, kbps: cm.kbps, shield,
+                sci: ins.sci, reqKbps: ins.reqKbps, route, isValid,
+                speed: route === 'Direct' ? 0.0042 : 0.0029
+            };
+        }
+
+        function recalcTeams() {
+            alphaData = computeTeam('alpha');
+            omegaData = computeTeam('omega');
+            if (!isRemoteSync) syncTeamsToFirebase();
+        }
+
+        function launchCompetitiveRace(fromRemote = false) {
+            recalcTeams();
+            if (!alphaData.isValid || !omegaData.isValid) {
+                alert("⚠️ Both teams must stay within the Contract Budget and Launch Vehicle Mass Limits before launching!");
+                return;
+            }
+            alphaProg = 0;
+            omegaProg = 0;
+            raceRunning = true;
+            document.getElementById('winner-banner').style.display = 'none';
+            document.getElementById('race-status').innerText = "STATUS: TELEMETRY LIVE // INTERPLANETARY TRANSIT IN PROGRESS";
+
+            if (compRoom && !fromRemote) {
+                db.ref(`competitive_rooms/${compRoom}/raceTrigger`).set(Date.now());
+            }
+        }
+
+        function evaluateRaceWinner() {
+            raceRunning = false;
+            const c = contracts[activeContractKey];
+
+            function scoreTeam(t, arrivalRank) {
+                let failReasons = [];
+                if (t.shield < c.reqShield) failReasons.push(`Shielding below ${c.reqShield}%`);
+                if (t.deliveredPwr < c.reqPower) failReasons.push(`Power below ${c.reqPower}W`);
+                if (t.kbps < c.minKbps) failReasons.push(`Comms below ${c.minKbps} kbps`);
+
+                if (failReasons.length > 0) {
+                    return { score: 0, status: `FAILED (${failReasons.join(', ')})` };
+                }
+
+                const dataEff = Math.min(1.0, t.kbps / t.reqKbps);
+                const budgetMargin = Math.max(0, c.budget - t.cost);
+                const arrivalBonus = arrivalRank === 1 ? 200 : 0;
+                const total = Math.round((t.sci * 10 * dataEff) + budgetMargin + arrivalBonus);
+                return { score: total, status: `SUCCESS (Rank #${arrivalRank} Arrival +${arrivalBonus} PTS)` };
+            }
+
+            const alphaFirst = alphaData.speed >= omegaData.speed;
+            const resA = scoreTeam(alphaData, alphaFirst ? 1 : 2);
+            const resO = scoreTeam(omegaData, alphaFirst ? 2 : 1);
+
+            let headline = "";
+            if (resA.score === 0 && resO.score === 0) {
+                headline = "❌ NO CONTRACT WINNER: Both rival spacecraft suffered mission failure!";
+            } else if (resA.score > resO.score) {
+                headline = `🏆 CONTRACT AWARDED TO: ${alphaData.name} (${resA.score} PTS vs ${resO.score} PTS)`;
+            } else if (resO.score > resA.score) {
+                headline = `🏆 CONTRACT AWARDED TO: ${omegaData.name} (${resO.score} PTS vs ${resA.score} PTS)`;
+            } else {
+                headline = `🤝 EXACT TIE: Both teams scored ${resA.score} PTS!`;
+            }
+
+            const banner = document.getElementById('winner-banner');
+            banner.style.display = 'block';
+            banner.innerHTML = `
+                <strong style="color:#58a6ff; font-size:1.05rem;">${headline}</strong><br><br>
+                <span style="color:#58a6ff;">■ ${alphaData.name}:</span> <strong>${resA.score} PTS</strong> — ${resA.status}<br>
+                <span style="color:#f0883e;">■ ${omegaData.name}:</span> <strong>${resO.score} PTS</strong> — ${resO.status}
+            `;
+            document.getElementById('race-status').innerText = "STATUS: CONTRACT EVALUATION COMPLETE";
+        }
+
+        // --- FIREBASE SYNC FOR COMPETITIVE ROOMS ---
+        function createCompetitiveRoom() {
+            compRoom = Math.floor(1000 + Math.random() * 9000).toString();
+            document.getElementById('comp-room-status').innerText = `ACTIVE ROOM CODE: ${compRoom}`;
+            syncTeamsToFirebase();
+            listenToCompetitiveRoom();
+        }
+
+        function joinCompetitiveRoom() {
+            const code = document.getElementById('comp-room-input').value.trim();
+            if (code.length < 4) return alert("Enter a valid 4-digit room code.");
+            compRoom = code;
+            document.getElementById('comp-room-status').innerText = `CONNECTED TO ROOM: ${compRoom}`;
+            listenToCompetitiveRoom();
+        }
+
+        function syncTeamsToFirebase() {
+            if (!compRoom) return;
+            const payload = {
+                contract: activeContractKey,
+                alpha: {
+                    name: document.getElementById('alpha-name').value,
+                    launcher: document.getElementById('alpha-launcher').value,
+                    power: document.getElementById('alpha-power').value,
+                    comm: document.getElementById('alpha-comm').value,
+                    inst: document.getElementById('alpha-inst').value,
+                    route: document.getElementById('alpha-route').value,
+                    shield: document.getElementById('alpha-shield').value
+                },
+                omega: {
+                    name: document.getElementById('omega-name').value,
+                    launcher: document.getElementById('omega-launcher').value,
+                    power: document.getElementById('omega-power').value,
+                    comm: document.getElementById('omega-comm').value,
+                    inst: document.getElementById('omega-inst').value,
+                    route: document.getElementById('omega-route').value,
+                    shield: document.getElementById('omega-shield').value
+                }
+            };
+            db.ref(`competitive_rooms/${compRoom}/state`).set(payload);
+        }
+
+        function listenToCompetitiveRoom() {
+            if (!compRoom) return;
+            db.ref(`competitive_rooms/${compRoom}/state`).on('value', snap => {
+                const d = snap.val();
+                if (!d) return;
+                isRemoteSync = true;
+                if (d.contract && d.contract !== activeContractKey) {
+                    activeContractKey = d.contract;
+                }
+                ['alpha', 'omega'].forEach(p => {
+                    if (d[p]) {
+                        document.getElementById(`${p}-name`).value = d[p].name;
+                        document.getElementById(`${p}-launcher`).value = d[p].launcher;
+                        document.getElementById(`${p}-power`).value = d[p].power;
+                        document.getElementById(`${p}-comm`).value = d[p].comm;
+                        document.getElementById(`${p}-inst`).value = d[p].inst;
+                        document.getElementById(`${p}-route`).value = d[p].route;
+                        document.getElementById(`${p}-shield`).value = d[p].shield;
+                    }
+                });
+                recalcTeams();
+                isRemoteSync = false;
+            });
+
+            db.ref(`competitive_rooms/${compRoom}/raceTrigger`).on('value', snap => {
+                if (snap.val() && !raceRunning) {
+                    launchCompetitiveRace(true);
+                }
+            });
+        }
+
+        // --- RACE CANVAS RENDERER ---
+        const rCanvas = document.getElementById('raceCanvas');
+        const rCtx = rCanvas.getContext('2d');
+
+        function drawRace() {
+            const w = rCanvas.width;
+            const h = rCanvas.height;
+            const c = contracts[activeContractKey];
+
+            rCtx.fillStyle = '#020408';
+            rCtx.fillRect(0, 0, w, h);
+
+            const startX = 90;
+            const endX = w - 110;
+            const laneA = 85;
+            const laneO = 185;
+
+            // Track Lines
+            rCtx.setLineDash([5, 5]);
+            rCtx.strokeStyle = '#30363d';
+            rCtx.beginPath(); rCtx.moveTo(startX, laneA); rCtx.lineTo(endX, laneA); rCtx.stroke();
+            rCtx.beginPath(); rCtx.moveTo(startX, laneO); rCtx.lineTo(endX, laneO); rCtx.stroke();
+            rCtx.setLineDash([]);
+
+            // Earth Start Nodes
+            [laneA, laneO].forEach(y => {
+                rCtx.beginPath();
+                rCtx.arc(startX, y, 14, 0, Math.PI * 2);
+                rCtx.fillStyle = '#58a6ff';
+                rCtx.fill();
+            });
+
+            // Target Finish Nodes
+            [laneA, laneO].forEach(y => {
+                rCtx.beginPath();
+                rCtx.arc(endX, y, 16, 0, Math.PI * 2);
+                rCtx.fillStyle = c.color;
+                rCtx.fill();
+            });
+
+            rCtx.fillStyle = '#8b949e';
+            rCtx.font = '12px monospace';
+            rCtx.fillText('EARTH', startX - 18, 35);
+            rCtx.fillText(c.target.toUpperCase(), endX - 45, 35);
+
+            // Spacecraft Positions
+            const ax = startX + (endX - startX) * alphaProg;
+            const ox = startX + (endX - startX) * omegaProg;
+
+            // Draw Team Alpha Craft
+            rCtx.fillStyle = '#58a6ff';
+            rCtx.fillRect(ax - 10, laneA - 7, 20, 14);
+            rCtx.fillText(`${alphaData.name || 'ALPHA'} (${Math.round(alphaProg * 100)}%)`, ax - 30, laneA - 16);
+
+            // Draw Team Omega Craft
+            rCtx.fillStyle = '#f0883e';
+            rCtx.fillRect(ox - 10, laneO - 7, 20, 14);
+            rCtx.fillText(`${omegaData.name || 'OMEGA'} (${Math.round(omegaProg * 100)}%)`, ox - 30, laneO - 16);
+
+            if (raceRunning) {
+                alphaProg = Math.min(1, alphaProg + alphaData.speed);
+                omegaProg = Math.min(1, omegaProg + omegaData.speed);
+                if (alphaProg >= 1 && omegaProg >= 1) {
+                    evaluateRaceWinner();
+                }
+            }
+
+            requestAnimationFrame(drawRace);
+        }
+
+        // Background Starfield
+        const bg = document.getElementById('bgCanvas');
+        const bctx = bg.getContext('2d');
+        bg.width = window.innerWidth;
+        bg.height = window.innerHeight;
+        const bgStars = Array.from({ length: 140 }, () => ({
+            x: Math.random() * bg.width,
+            y: Math.random() * bg.height,
+            r: Math.random() * 1.4
+        }));
+        function renderBg() {
+            bctx.fillStyle = '#020408';
+            bctx.fillRect(0, 0, bg.width, bg.height);
+            bctx.fillStyle = 'rgba(180,220,255,0.6)';
+            bgStars.forEach(s => {
+                bctx.beginPath();
+                bctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                bctx.fill();
+            });
+        }
+
+        renderBg();
+        recalcTeams();
+        drawRace();
+    </script>
+</body>
+</html>
