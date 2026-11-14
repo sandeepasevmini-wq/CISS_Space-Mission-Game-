@@ -17,6 +17,101 @@
     <!-- FIREBASE MULTIPLAYER ENGINES (v8 Compat) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+      .mode-nav-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        max-width: 960px;
+        margin: 22px auto 0 auto;
+        text-align: left;
+      }
+
+      .mode-launch-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: linear-gradient(145deg, #161b22 0%, #0d1117 100%);
+        border: 1px solid #30363d;
+        border-left: 4px solid #58a6ff;
+        border-radius: 6px;
+        padding: 16px 20px;
+        color: #e6edf3;
+        text-decoration: none;
+        font-family: 'Courier New', Courier, monospace;
+        transition: all 0.25s ease;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+      }
+
+      .mode-launch-btn.sandbox-btn {
+        border-left-color: #2ea043;
+      }
+
+      .mode-launch-btn:hover {
+        transform: translateY(-2px);
+        border-color: #58a6ff;
+        box-shadow: 0 6px 20px rgba(88, 166, 255, 0.18);
+        background: linear-gradient(145deg, #1c222b 0%, #11161d 100%);
+      }
+
+      .mode-launch-btn.sandbox-btn:hover {
+        border-color: #2ea043;
+        box-shadow: 0 6px 20px rgba(46, 160, 67, 0.18);
+      }
+
+      .mode-btn-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .mode-btn-tag {
+        font-size: 0.7rem;
+        letter-spacing: 1.5px;
+        color: #58a6ff;
+        font-weight: bold;
+      }
+
+      .sandbox-btn .mode-btn-tag {
+        color: #3fb950;
+      }
+
+      .mode-btn-title {
+        font-size: 1.05rem;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+      }
+
+      .mode-btn-desc {
+        font-size: 0.78rem;
+        color: #8b949e;
+      }
+
+      .mode-btn-icon {
+        width: 34px;
+        height: 34px;
+        stroke: #58a6ff;
+        flex-shrink: 0;
+        margin-left: 14px;
+        transition: transform 0.25s ease;
+      }
+
+      .sandbox-btn .mode-btn-icon {
+        stroke: #3fb950;
+      }
+
+      .mode-launch-btn:hover .mode-btn-icon {
+        transform: translateX(4px);
+      }
+
+.force-hidden {
+    display: none !important;
+}
+
+    </style>
 </head>
 <body style="position: relative; margin: 0;">
 
@@ -75,49 +170,113 @@
                 </button>
             </div>
 
-            <!-- Join Screen -->
-            <div id="lobby-join" style="display: none; text-align: left;">
-                <h3 style="color: #a5d6ff; border-bottom: 1px solid #30363d; padding-bottom: 5px;">JOIN ACTIVE MISSION</h3>
-                <input type="text" id="join-room-code" placeholder="Enter 4-Digit Room Code..." style="width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; font-family: monospace; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 1rem; text-align: center; letter-spacing: 2px;">
+            <!-- Host Configuration Screen (Now allows choosing host role) -->
+            <div id="lobby-host" style="display: none; text-align: left;">
+                <h3 style="color: #a5d6ff; border-bottom: 1px solid #30363d; padding-bottom: 5px;">HOST ACTIVE MISSION</h3>
+                <p style="margin: 15px 0; font-size: 0.9rem;">ROOM CODE: <strong id="display-room-code" style="font-size: 1.8rem; color: #d2a8ff; letter-spacing: 4px; background: #21262d; padding: 6px 12px; border-radius: 4px; border: 1px solid #30363d;">----</strong></p>
                 
-                <label style="color: #8b949e; font-size: 0.85rem; display: block; margin-bottom: 5px;">SELECT YOUR CREW ROLE:</label>
-                <select id="join-role" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 25px; font-family: monospace; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.9rem;">
+                <label style="color: #8b949e; font-size: 0.85rem; display: block; margin-bottom: 5px;">SELECT YOUR CREW ROLE (HOST):</label>
+                <select id="host-role" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 20px; font-family: monospace; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.9rem;">
                     <option value="cmd">Commander (Budget & Launch Control)</option>
                     <option value="eng">Lead Engineer (Power & Shields)</option>
                     <option value="sci">Chief Scientist (Target Destination & Instruments)</option>
                     <option value="fd">Flight Director (Route Trajectory & Comms)</option>
                 </select>
+
+                <p id="host-role-status" style="color: #8b949e; font-size: 0.8rem; margin-bottom: 20px;">Waiting for crew members to connect...</p>
                 
-                <button onclick="joinMultiplayerRoom()" class="action-btn" style="width: 100%; background: #2ea043; border: 1px solid #238636; color: white; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; letter-spacing: 1px;">
-                    CONNECT TO HANGAR
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="returnToLobbyMain()" class="action-btn" style="flex: 1; background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace;">
+                        &larr; BACK
+                    </button>
+                    <button onclick="confirmHostDeployment()" class="action-btn" style="flex: 2; background: #1f6feb; border: 1px solid #388bfd; color: white; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; letter-spacing: 1px;">
+                        ENTER HANGAR VIEW
+                    </button>
+                </div>
+            </div>
+
+            <!-- Join Screen -->
+            <div id="lobby-join" style="display: none; text-align: left;">
+                <h3 style="color: #a5d6ff; border-bottom: 1px solid #30363d; padding-bottom: 5px;">JOIN ACTIVE MISSION</h3>
+                <input type="text" id="join-room-code" placeholder="Enter 4-Digit Room Code..." style="width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; font-family: monospace; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 1rem; text-align: center; letter-spacing: 2px;" oninput="fetchAvailableRolesForRoom()">
+                
+                <label style="color: #8b949e; font-size: 0.85rem; display: block; margin-bottom: 5px;">SELECT YOUR CREW ROLE:</label>
+                <select id="join-role" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 25px; font-family: monospace; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.9rem;">
+                    <option value="cmd" id="opt-cmd">Commander (Budget & Launch Control)</option>
+                    <option value="eng" id="opt-eng">Lead Engineer (Power & Shields)</option>
+                    <option value="sci" id="opt-sci">Chief Scientist (Target Destination & Instruments)</option>
+                    <option value="fd" id="opt-fd">Flight Director (Route Trajectory & Comms)</option>
+                </select>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="returnToLobbyMain()" class="action-btn" style="flex: 1; background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace;">
+                        &larr; BACK
+                    </button>
+                    <button onclick="joinMultiplayerRoom()" class="action-btn" style="flex: 2; background: #2ea043; border: 1px solid #238636; color: white; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; letter-spacing: 1px;">
+                        CONNECT TO HANGAR
+                    </button>
+                </div>
             </div>
 
             <!-- Room Active Status -->
             <div id="lobby-active" style="display: none;">
                 <h3 style="color: #58a6ff;">NETWORK ESTABLISHED</h3>
-                <p style="margin: 20px 0;">ROOM CODE: <strong id="display-room-code" style="font-size: 2.5rem; color: #d2a8ff; letter-spacing: 6px; background: #21262d; padding: 10px 20px; border-radius: 6px; border: 1px solid #30363d;">----</strong></p>
+                <p style="margin: 20px 0;">ROOM CODE: <strong id="active-room-code" style="font-size: 2.5rem; color: #d2a8ff; letter-spacing: 6px; background: #21262d; padding: 10px 20px; border-radius: 6px; border: 1px solid #30363d;">----</strong></p>
                 <p id="role-display-text" style="color: #8b949e; font-size: 0.9rem;">Awaiting crew members...</p>
-                <button onclick="closeWelcomeModal()" class="action-btn" style="width: 100%; background: #1f6feb; border: 1px solid #388bfd; color: white; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 25px; font-family: monospace; letter-spacing: 1px;">
-                    ENTER HANGAR VIEW
-                </button>
+                
+                <div style="display: flex; gap: 10px; margin-top: 25px;">
+                    <button onclick="returnToLobbyMain()" class="action-btn" style="flex: 1; background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace;">
+                        &larr; BACK
+                    </button>
+                    <button onclick="closeWelcomeModal()" class="action-btn" style="flex: 2; background: #1f6feb; border: 1px solid #388bfd; color: white; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; letter-spacing: 1px;">
+                        ENTER HANGAR VIEW
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-<header>
-    <!-- MOBILE CENTERED LOGO -->
-    <div class="mobile-logo-wrap">
-        <img src="ciss-logo.png" alt="CISS Logo">
-    </div>
-    <h1>SPACE MISSION SYSTEMS ARCHITECT</h1>
-    <p class="subtitle">INTERPLANETARY SYSTEMS ENGINEERING & TRADE-OFF SIMULATION</p>
-</header>
+    <header>
+        <!-- MOBILE CENTERED LOGO -->
+        <div class="mobile-logo-wrap">
+            <img src="ciss-logo.png" alt="CISS Logo">
+        </div>
+        <h1>SPACE MISSION SYSTEMS ARCHITECT</h1>
+        <p class="subtitle">INTERPLANETARY SYSTEMS ENGINEERING & TRADE-OFF SIMULATION</p>
+
+        <!-- MODULE NAVIGATION BUTTONS PLACED BELOW HEADINGS -->
+        <div class="mode-nav-grid">
+            <a href="competitive.html" onclick="playClick();" class="mode-launch-btn">
+                <div class="mode-btn-content">
+                    <span class="mode-btn-tag">MULTI-TEAM CONTRACT // MODULE 02</span>
+                    <span class="mode-btn-title">COMPETITIVE SCENARIOS</span>
+                    <span class="mode-btn-desc">Design rival spacecraft architectures for shared mission contracts and race head-to-head.</span>
+                </div>
+                <svg class="mode-btn-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+            </a>
+
+            <a href="sandbox.html" onclick="playClick();" class="mode-launch-btn sandbox-btn">
+                <div class="mode-btn-content">
+                    <span class="mode-btn-tag">UNRESTRICTED LAB // MODULE 03</span>
+                    <span class="mode-btn-title">PHYSICS &amp; SYSTEMS SANDBOX</span>
+                    <span class="mode-btn-desc">Experiment without budget or mass limits, customize planetary physics, and run guided labs.</span>
+                </div>
+                <svg class="mode-btn-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </a>
+        </div>
+    </header>
 
     <main class="dashboard">
         <!-- Control Panel Column -->
         <section class="controls">
-            
+
             <!-- TARGET WRAPPER -->
             <div id="control-target">
                 <h2>1. SELECT TARGET DESTINATION (Scientist)</h2>
@@ -136,6 +295,25 @@
                     </button>
                 </div>
             </div>
+
+<!-- NASA Mission Viz Integration Panel -->
+<div class="panel" style="margin-top: 20px; background: #0d1117; border: 1px solid #30363d; padding: 15px; border-radius: 6px; font-family: monospace;">
+    <h3 style="color: #58a6ff; font-size: 0.95rem; margin-top: 0; border-bottom: 1px solid #21262d; padding-bottom: 6px;">
+        🌌 MISSION VIZ: INTERPLANETARY TRAJECTORY MAP
+    </h3>
+    <div style="position: relative; width: 100%; height: 240px; background: #020408; border-radius: 4px; overflow: hidden; border: 1px solid #30363d;">
+        <canvas id="missionVizCanvas" width="800" height="240" style="width: 100%; height: 100%; display: block;"></canvas>
+        
+        <!-- HTML HUD OVERLAY -->
+        <div id="vizHud" style="position: absolute; top: 12px; left: 12px; background: rgba(13, 17, 23, 0.85); border: 1px solid #30363d; padding: 8px 12px; border-radius: 4px; pointer-events: none; font-size: 0.75rem; line-height: 1.4;">
+            <div id="vizHudTarget" style="color: #58a6ff; font-weight: bold;">TARGET: Europa (Jupiter)</div>
+            <div id="vizHudDist" style="color: #8b949e;">SEPARATION DISTANCE: 5.2 AU</div>
+        </div>
+    </div>
+    <p style="font-size: 0.75rem; color: #8b949e; margin: 8px 0 0 0;">
+        Real-time spatial visualization adapted from NASA Mission Viz architecture principles.
+    </p>
+</div>
             
             <div class="objective-card">
                 <p id="target-display">Selected Target: Europa (Jupiter) | Distance: 5.2 AU</p>
@@ -367,7 +545,7 @@
             <div id="control-launcher">
                 <div class="setting">
                     <label for="launcher-select">LAUNCH VEHICLE (Commander):</label>
-                    <select id="launcher-select" onchange="pushStateToNetwork(); playClick();">
+                    <select id="launcher-select" onchange="pushStateToNetwork(); updateSettings(); playClick();">
                         <option value="FalconHeavy">Falcon Heavy ($150M | Max 1500kg)</option>
                         <option value="SLS">Space Launch System ($800M | Max 3000kg)</option>
                     </select>
@@ -378,7 +556,7 @@
             <div id="control-power">
                 <div class="setting">
                     <label for="power-select">POWER GENERATOR (Engineer):</label>
-                    <select id="power-select" onchange="pushStateToNetwork(); playClick();">
+                    <select id="power-select" onchange="pushStateToNetwork(); updateSettings(); playClick();">
                         <option value="Solar">Solar Arrays ($50M | 200kg | 200W)</option>
                         <option value="RTG">Nuclear RTG ($200M | 150kg | 600W)</option>
                     </select>
@@ -389,7 +567,7 @@
             <div id="control-comm">
                 <div class="setting">
                     <label for="comm-select">COMMUNICATIONS SYSTEM (Flight Director):</label>
-                    <select id="comm-select" onchange="pushStateToNetwork(); playClick();">
+                    <select id="comm-select" onchange="pushStateToNetwork(); updateSettings(); playClick();">
                         <option value="LGA">Low-Gain Antenna ($20M | 50kg | 10 kbps)</option>
                         <option value="HGA">High-Gain Dish ($80M | 120kg | 500 kbps)</option>
                         <option value="Laser">Laser Comms ($180M | 80kg | 5000 kbps)</option>
@@ -401,7 +579,7 @@
             <div id="control-instrument">
                 <div class="setting">
                     <label for="instrument-select">SCIENTIFIC PAYLOAD INSTRUMENT (Scientist):</label>
-                    <select id="instrument-select" onchange="pushStateToNetwork(); playClick();">
+                    <select id="instrument-select" onchange="pushStateToNetwork(); updateSettings(); playClick();">
                         <option value="Camera">Optical Imaging Camera ($40M | 60kg)</option>
                         <option value="Radar">Ice-Penetrating Radar ($150M | 220kg)</option>
                         <option value="Spectrometer">Mass Spectrometer ($110M | 100kg)</option>
@@ -413,7 +591,7 @@
             <div id="control-shield">
                 <div class="setting">
                     <label for="shield-slider">RADIATION SHIELDING (Engineer): <span id="shield-val">50</span>% ($<span id="shield-cost">100</span>M | <span id="shield-mass">250</span>kg)</label>
-                    <input type="range" id="shield-slider" min="10" max="100" value="50" oninput="pushStateToNetwork();">
+                    <input type="range" id="shield-slider" min="10" max="100" value="50" oninput="pushStateToNetwork(); updateSettings();">
                 </div>
             </div>
 
@@ -424,9 +602,22 @@
         <!-- Simulation Viewport & Standalone Leaderboard Column -->
         <section class="viewport">
 
-            <!-- LEARN THE BASICS BUTTON (NO EMOJIS) -->
-            <div style="margin-bottom: 20px;">
-                <a href="basics.html" target="_blank" style="display: block; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #1f6feb 0%, #238636 100%); border: 1px solid #388bfd; color: white; padding: 14px; border-radius: 6px; font-family: monospace; font-weight: bold; text-decoration: none; text-align: center; letter-spacing: 2px; box-shadow: 0 0 15px rgba(31, 111, 235, 0.4); transition: all 0.3s ease;">
+            <!-- DEPLOYMENT CONFIGURATION & LEARN THE BASICS -->
+            <div style="background: #0d1117; border: 1px solid #30363d; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-family: monospace;">
+                <label style="display: block; font-size: 0.8rem; color: #8b949e; margin-bottom: 8px;">MISSION DEPLOYMENT MODE:</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <button onclick="openLobbyModalAt('solo')" style="flex: 1; background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 8px; border-radius: 4px; cursor: pointer; font-family: monospace; font-size: 0.75rem; font-weight: bold;">
+                        👤 SOLO
+                    </button>
+                    <button onclick="openLobbyModalAt('host')" style="flex: 1; background: #8957e5; border: 1px solid #6e40c9; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-family: monospace; font-size: 0.75rem; font-weight: bold;">
+                        📡 HOST TEAM
+                    </button>
+                    <button onclick="openLobbyModalAt('join')" style="flex: 1; background: #2ea043; border: 1px solid #238636; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-family: monospace; font-size: 0.75rem; font-weight: bold;">
+                        🚀 JOIN TEAM
+                    </button>
+                </div>
+                
+                <a href="basics.html" target="_blank" style="display: block; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #1f6feb 0%, #238636 100%); border: 1px solid #388bfd; color: white; padding: 12px; border-radius: 6px; font-family: monospace; font-weight: bold; text-decoration: none; text-align: center; letter-spacing: 2px; box-shadow: 0 0 15px rgba(31, 111, 235, 0.4); transition: all 0.3s ease;">
                     LEARN THE BASICS
                 </a>
             </div>
@@ -589,6 +780,22 @@
             © 2026 Ceylon Institute of Space Science. All Interplanetary Rights Reserved.
         </div>
     </footer>
+
+// Add this check inside your main script initialization in index.html
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('skipLoader') === 'true') {
+    // Hide the pilot cockpit loader screen immediately
+    const loaderScreen = document.getElementById('loaderScreen'); // Replace with your actual loader ID if different
+    if (loaderScreen) {
+        loaderScreen.style.display = 'none';
+    }
+    
+    // Ensure the main hangar/game interface is active and visible
+    const mainApp = document.getElementById('mainApp'); // Replace with your main container ID if different
+    if (mainApp) {
+        mainApp.style.display = 'block';
+    }
+}
 
     <script src="app.js"></script>
 </body>
