@@ -781,22 +781,6 @@
         </div>
     </footer>
 
-// Add this check inside your main script initialization in index.html
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('skipLoader') === 'true') {
-    // Hide the pilot cockpit loader screen immediately
-    const loaderScreen = document.getElementById('loaderScreen'); // Replace with your actual loader ID if different
-    if (loaderScreen) {
-        loaderScreen.style.display = 'none';
-    }
-    
-    // Ensure the main hangar/game interface is active and visible
-    const mainApp = document.getElementById('mainApp'); // Replace with your main container ID if different
-    if (mainApp) {
-        mainApp.style.display = 'block';
-    }
-}
-
     <script src="app.js"></script>
 </body>
 </html>
