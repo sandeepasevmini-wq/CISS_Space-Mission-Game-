@@ -9,6 +9,19 @@ const firebaseConfig = {
     appId: "1:1234567890:web:abcdef123456"
 };
 
+document.addEventListener("DOMContentLoaded", () => {
+    // --- CHECK FOR SKIP LOADER PARAMETER ---
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('skipLoader') === 'true') {
+        const loaderScreen = document.getElementById('loader-screen');
+        if (loaderScreen) {
+            loaderScreen.classList.add('force-hidden');
+        }
+    }
+    
+    // ... rest of your app.js startup logic ...
+});
+
 // Initialize Firebase if not already initialized
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -179,26 +192,66 @@ function startSolo() {
     playClick();
     gameMode = "single";
     myAssignedRole = null;
+    currentRoomCode = null;
+
+    // Fully restore control panel opacities and remove restrictions
+    const controlIDs = ['control-target', 'control-difficulty', 'control-route', 'control-launcher', 'control-power', 'control-comm', 'control-instrument', 'control-shield'];
+    controlIDs.forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) elem.style.opacity = '1.0';
+    });
+
     closeWelcomeModal();
+}
+
+function returnToLobbyMain() {
+    playClick();
+    const hostEl = document.getElementById('lobby-host');
+    const joinEl = document.getElementById('lobby-join');
+    const activeEl = document.getElementById('lobby-active');
+    const mainEl = document.getElementById('lobby-main');
+
+    if (hostEl) hostEl.style.display = 'none';
+    if (joinEl) joinEl.style.display = 'none';
+    if (activeEl) activeEl.style.display = 'none';
+    if (mainEl) mainEl.style.display = 'flex';
+}
+
+function openLobbyModalAt(mode) {
+    playClick();
+    const modal = document.getElementById('welcome-modal');
+    if (!modal) return;
+
+    returnToLobbyMain();
+    modal.style.display = 'flex';
+
+    if (mode === 'host') {
+        showHostScreen();
+    } else if (mode === 'join') {
+        showJoinScreen();
+    }
 }
 
 function showHostScreen() {
     playClick();
     gameMode = "team";
     isHost = true;
-    myAssignedRole = "cmd"; // Host defaults to Commander
 
     // Generate random 4-digit room code
     currentRoomCode = Math.floor(1000 + Math.random() * 9000).toString();
 
     document.getElementById('lobby-main').style.display = 'none';
-    document.getElementById('lobby-active').style.display = 'block';
+    document.getElementById('lobby-host').style.display = 'block';
     document.getElementById('display-room-code').innerText = currentRoomCode;
-    document.getElementById('role-display-text').innerText = "Role Assigned: 👑 Commander (Host) | Waiting for crew members...";
+    const activeRoomCodeEl = document.getElementById('active-room-code');
+    if (activeRoomCodeEl) activeRoomCodeEl.innerText = currentRoomCode;
 
-    // Initialize Firebase Room Entry
+    // Initialize Firebase Room Entry with Host Role Default ('cmd')
     db.ref('rooms/' + currentRoomCode).set({
         host: "Commander",
+        roles: {
+            cmd: true // Host takes cmd initially
+        },
         state: {
             target: "Europa",
             difficulty: "Commander",
@@ -211,7 +264,19 @@ function showHostScreen() {
             launchTriggered: false
         }
     });
+}
 
+function confirmHostDeployment() {
+    playClick();
+    const roleSelect = document.getElementById('host-role');
+    myAssignedRole = roleSelect.value;
+
+    // Update Firebase with the host's actual chosen role
+    db.ref(`rooms/${currentRoomCode}/roles`).set({
+        [myAssignedRole]: true
+    });
+
+    closeWelcomeModal();
     listenToRoomSync();
     applyRoleAccessControl();
 }
@@ -223,6 +288,30 @@ function showJoinScreen() {
 
     document.getElementById('lobby-main').style.display = 'none';
     document.getElementById('lobby-join').style.display = 'block';
+}
+
+// Dynamically check and hide already-taken roles when typing room code
+function fetchAvailableRolesForRoom() {
+    const codeInput = document.getElementById('join-room-code');
+    if (!codeInput) return;
+    const code = codeInput.value.trim();
+
+    if (code.length < 4) return;
+
+    db.ref('rooms/' + code + '/roles').once('value', (snapshot) => {
+        const takenRoles = snapshot.val() || {};
+        
+        ['cmd', 'eng', 'sci', 'fd'].forEach(role => {
+            const opt = document.getElementById(`opt-${role}`);
+            if (opt) {
+                if (takenRoles[role]) {
+                    opt.style.display = 'none'; // Hide taken role
+                } else {
+                    opt.style.display = 'block'; // Show available role
+                }
+            }
+        });
+    });
 }
 
 function joinMultiplayerRoom() {
@@ -238,13 +327,22 @@ function joinMultiplayerRoom() {
     currentRoomCode = codeInput.value.trim();
     myAssignedRole = roleSelect.value;
 
-    db.ref('rooms/' + currentRoomCode).once('value', (snapshot) => {
+    const roomRef = db.ref('rooms/' + currentRoomCode);
+    roomRef.once('value', (snapshot) => {
         if (snapshot.exists()) {
-            document.getElementById('lobby-join').style.display = 'none';
-            document.getElementById('lobby-active').style.display = 'block';
-            document.getElementById('display-room-code').innerText = currentRoomCode;
-            document.getElementById('role-display-text').innerText = `Role Assigned: ${roleSelect.options[roleSelect.selectedIndex].text}`;
-            
+            const roomData = snapshot.val();
+            const takenRoles = roomData.roles || {};
+
+            if (takenRoles[myAssignedRole]) {
+                alert("⚠️ That crew role has already been claimed in this team! Please select an available role.");
+                fetchAvailableRolesForRoom();
+                return;
+            }
+
+            // Claim role in Firebase
+            db.ref(`rooms/${currentRoomCode}/roles/${myAssignedRole}`).set(true);
+
+            closeWelcomeModal();
             listenToRoomSync();
             applyRoleAccessControl();
         } else {
@@ -279,9 +377,10 @@ function applyRoleAccessControl() {
 }
 
 function pushStateToNetwork() {
+    updateSettings(); // Always update local settings and 3D model first
+
     if (!currentRoomCode || isSyncingFromRemote) return;
 
-    // Only allow pushing state if player has permission for that control
     const statePayload = {
         target: activeTarget ? (activeTarget.name.includes('Europa') ? 'Europa' : activeTarget.name.includes('Titan') ? 'Titan' : 'Psyche') : 'Europa',
         difficulty: document.getElementById('difficulty-select') ? document.getElementById('difficulty-select').value : 'Commander',
@@ -295,7 +394,6 @@ function pushStateToNetwork() {
     };
 
     db.ref('rooms/' + currentRoomCode + '/state').set(statePayload);
-    updateSettings();
 }
 
 function listenToRoomSync() {
@@ -355,7 +453,6 @@ function downloadMissionReportPDF() {
     const instElem = document.getElementById('instrument-select');
     const routeElem = document.getElementById('route-select');
     
-    // Determine dynamic analysis paragraph based on mission parameters & result
     let analysisText = "";
     const isFail = gradeVal === 'F' || gradeVal === 'C' || parseInt(scoreVal) === 0;
     
@@ -386,14 +483,12 @@ function downloadMissionReportPDF() {
         analysisText = `<strong>MISSION SUCCESS ANALYSIS:</strong> Exceptional engineering! All baseline scientific requirements for ${targetName} were successfully met, preserving structural integrity, power output, and communication throughput throughout the interplanetary transit.<br><br><strong>RECOMMENDATION FOR HIGHER SCORE:</strong> To maximize your Science Yield and push your score into the elite S-Grade tier (>1200 PTS), try utilizing the <em>Gravity Assist Flyby</em> route to save budget credits, keep unused budget margins high for the financial bonus multiplier, and pair high-volume instruments (like Radar) with Laser Communications to eliminate data bottlenecks.`;
     }
     
-    // Open a new clean browser window / tab
     const reportWindow = window.open('', '_blank');
     if (!reportWindow) {
         alert("⚠️ Popup blocked! Please allow popups for this site to view your Mission Report.");
         return;
     }
 
-   // Direct SVG-based CISS emblem favicon matching your UI theme
     const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#0d1117" stroke="#58a6ff" stroke-width="8"/><circle cx="50" cy="50" r="25" fill="none" stroke="#f85149" stroke-width="6"/><line x1="50" y1="5" x2="50" y2="95" stroke="#58a6ff" stroke-width="4"/><line x1="5" y1="50" x2="95" y2="50" stroke="#58a6ff" stroke-width="4"/><circle cx="50" cy="50" r="8" fill="#58a6ff"/></svg>`;
     const cissFaviconSvg = `data:image/svg+xml,${encodeURIComponent(rawSvg)}`;
 
@@ -556,9 +651,7 @@ function archiveCurrentMission() {
     let storageKey = getPlayerStorageKey();
     let savedList = JSON.parse(localStorage.getItem(storageKey) || '[]');
     
-    // Add timestamp for date & time display
     missionRecord.timestamp = new Date().toLocaleString();
-    
     savedList.push(missionRecord);
     localStorage.setItem(storageKey, JSON.stringify(savedList));
 }
@@ -567,8 +660,6 @@ function openComparePage() {
     archiveCurrentMission();
     const nameInput = document.getElementById('player-name-input');
     const callsign = nameInput ? nameInput.value.trim() : 'Commander';
-    
-    // Pass the player's callsign via URL so the compare page knows whose missions to load
     window.open(`compare.html?player=${encodeURIComponent(callsign)}`, '_blank');
 }
 
@@ -667,7 +758,6 @@ function renderLeaderboardTable(dataList) {
     const tableBody = document.getElementById('leaderboard-body');
     if (!tableBody) return;
 
-    // Apply active dropdown filters
     const filterTarget = document.getElementById('filter-target') ? document.getElementById('filter-target').value : 'ALL';
     const filterDiff = document.getElementById('filter-difficulty') ? document.getElementById('filter-difficulty').value : 'ALL';
 
@@ -677,7 +767,6 @@ function renderLeaderboardTable(dataList) {
         return matchTarget && matchDiff;
     });
 
-    // Sort descending by score
     filtered.sort((a, b) => b.score - a.score);
 
     if (filtered.length === 0) {
@@ -959,16 +1048,22 @@ function startMission() {
     missionStatus = "TRANSIT INITIATED...";
     if (document.getElementById('debrief-text')) document.getElementById('debrief-text').innerText = "Spacecraft en route to " + activeTarget.name + "...";
 
-    // Update Dashboard Badge to ACTIVE
     const dashBadge = document.getElementById('dash-status-badge');
     if (dashBadge) {
         dashBadge.innerText = "IN TRANSIT";
         dashBadge.style.background = "#1f6feb";
     }
 
-    const viewportSection = document.querySelector('.viewport');
-    if (viewportSection) {
-        viewportSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const targetElement = document.getElementById('complications-container') || document.querySelector('.viewport');
+
+    if (targetElement) {
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset + 320;
+
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+        });
     }
 }
 
@@ -1054,19 +1149,16 @@ function initThreeHangar() {
     const container = document.getElementById('hangar-container');
     if (!container) return;
 
-    // 1. Scene & Camera Setup
     threeScene = new THREE.Scene();
     threeCamera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
     threeCamera.position.set(0, 3, 8);
     threeCamera.lookAt(0, 0, 0);
 
-    // 2. WebGL Renderer
     threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     threeRenderer.setSize(container.clientWidth, container.clientHeight);
     threeRenderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(threeRenderer.domElement);
 
-    // 3. Lighting for realistic 3D metallic surfaces & depth
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     threeScene.add(ambientLight);
 
@@ -1078,14 +1170,11 @@ function initThreeHangar() {
     blueRimLight.position.set(-5, -5, -5);
     threeScene.add(blueRimLight);
 
-    // 4. Master Spacecraft Group
     spacecraftGroup = new THREE.Group();
     threeScene.add(spacecraftGroup);
 
-    // Initial build of the 3D model based on default selections
     rebuildThreeSpacecraftModel();
 
-    // 5. Mouse Dragging & Orbit Rotation Controls
     container.addEventListener('mousedown', (e) => {
         isDragging3D = true;
         previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -1099,8 +1188,6 @@ function initThreeHangar() {
 
         targetRotationY += deltaX * 0.01;
         targetRotationX += deltaY * 0.01;
-
-        // Clamp vertical rotation so it doesn't flip completely upside down
         targetRotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, targetRotationX));
 
         previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -1111,7 +1198,6 @@ function initThreeHangar() {
         if (container) container.style.cursor = 'grab';
     });
 
-    // Touch support for mobile devices
     container.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
             isDragging3D = true;
@@ -1132,15 +1218,11 @@ function initThreeHangar() {
 
     window.addEventListener('touchend', () => { isDragging3D = false; });
 
-    // 6. Render Loop with smooth easing
     function animateThree() {
         requestAnimationFrame(animateThree);
-
-        // Smooth interpolation (lerp) toward target rotation for fluidity
         spacecraftGroup.rotation.y += (targetRotationY - spacecraftGroup.rotation.y) * 0.1;
         spacecraftGroup.rotation.x += (targetRotationX - spacecraftGroup.rotation.x) * 0.1;
 
-        // Subtle idle float animation when not dragging
         if (!isDragging3D) {
             targetRotationY += 0.003; 
         }
@@ -1154,7 +1236,6 @@ function initThreeHangar() {
 function rebuildThreeSpacecraftModel() {
     if (!spacecraftGroup) return;
 
-    // Clear previous meshes
     while (spacecraftGroup.children.length > 0) { 
         spacecraftGroup.remove(spacecraftGroup.children[0]); 
     }
@@ -1166,7 +1247,7 @@ function rebuildThreeSpacecraftModel() {
     const shieldSlider = document.getElementById('shield-slider');
     const shieldVal = shieldSlider ? parseInt(shieldSlider.value) : 50;
 
-    // --- 1. CENTRAL SPACECRAFT BUS (Gold MLI Thermal Foil) ---
+    // 1. CENTRAL SPACECRAFT BUS
     const coreGeometry = new THREE.BoxGeometry(1.4, 1.4, 1.4);
     const coreMaterial = new THREE.MeshStandardMaterial({ 
         color: 0xd4af37, 
@@ -1176,7 +1257,7 @@ function rebuildThreeSpacecraftModel() {
     const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
     spacecraftGroup.add(coreMesh);
 
-    // --- 2. LAUNCH VEHICLE / BOOSTER BASE (Falcon Heavy vs. SLS) ---
+    // 2. LAUNCH VEHICLE / BOOSTER BASE
     if (launcherKey === 'SLS') {
         const slsCoreGeo = new THREE.CylinderGeometry(0.5, 0.5, 2.2, 16);
         const slsCoreMat = new THREE.MeshStandardMaterial({ color: 0xc2410c, metalness: 0.4, roughness: 0.5 });
@@ -1211,7 +1292,7 @@ function rebuildThreeSpacecraftModel() {
         spacecraftGroup.add(rightSB);
     }
 
-    // --- 3. RADIATION SHIELDING HULL LAYER (Transparent Wireframe) ---
+    // 3. RADIATION SHIELDING HULL LAYER
     const shieldSize = 1.4 + (shieldVal / 200);
     const shieldGeo = new THREE.BoxGeometry(shieldSize, shieldSize, shieldSize);
     const shieldMat = new THREE.MeshBasicMaterial({ 
@@ -1223,7 +1304,7 @@ function rebuildThreeSpacecraftModel() {
     const shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
     spacecraftGroup.add(shieldMesh);
 
-    // --- 4. POWER SYSTEMS (Solar Wings vs. Nuclear RTG Cask) ---
+    // 4. POWER SYSTEMS
     if (powerKey === 'Solar') {
         const panelGeo = new THREE.BoxGeometry(2.6, 0.05, 0.9);
         const panelMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, metalness: 0.9, roughness: 0.1 });
@@ -1249,7 +1330,7 @@ function rebuildThreeSpacecraftModel() {
         spacecraftGroup.add(coreGlow);
     }
 
-    // --- 5. COMMUNICATIONS SYSTEMS ---
+    // 5. COMMUNICATIONS SYSTEMS
     if (commKey === 'Laser') {
         const laserGeo = new THREE.CylinderGeometry(0.08, 0.15, 0.9, 16);
         const laserMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x059669, metalness: 0.8 });
@@ -1271,7 +1352,7 @@ function rebuildThreeSpacecraftModel() {
         spacecraftGroup.add(lgaMesh);
     }
 
-    // --- 6. SCIENTIFIC PAYLOAD INSTRUMENT ---
+    // 6. SCIENTIFIC PAYLOAD INSTRUMENT
     if (instKey === 'Radar') {
         const radarGeo = new THREE.BoxGeometry(0.8, 0.25, 0.8);
         const radarMat = new THREE.MeshStandardMaterial({ color: 0x60a5fa, metalness: 0.6 });
@@ -1337,7 +1418,6 @@ function triggerRandomChallenge() {
     const btn1 = document.getElementById('anomaly-btn-1');
     const btn2 = document.getElementById('anomaly-btn-2');
 
-    // Display appropriate anomaly text based on whether it is Team Mode or Single Player
     if (titleElem) {
         if (gameMode === "team") {
             titleElem.innerHTML = `🚨 TEAM OVERRIDE REQUIRED: <br>${currentActiveChallenge.title}`;
@@ -1404,7 +1484,7 @@ function drawSpace() {
     ctx.fillStyle = activeTarget.color;
     ctx.fill();
 
-   if (isMissionActive) {
+    if (isMissionActive) {
         let probeX, probeY;
         if (selectedRoute === "GravityAssist") {
             let t = probeProgress;
@@ -1417,18 +1497,13 @@ function drawSpace() {
 
         drawProceduralSpacecraft(ctx, probeX, probeY);
 
-        // --- REALISTIC DYNAMIC PARAMETER UPDATES DURING TRANSIT ---
-        
-        // 1. Consumable Fuel Burn-Down (100% down to 0%)
         let fuelPct = Math.max(0, Math.round((1 - probeProgress) * 100));
         const dashFuel = document.getElementById('dash-fuel');
         if (dashFuel) dashFuel.innerText = `${fuelPct}%`;
 
-        // 2. Power Draw & Solar Decay (Inverse-Square Law approximation for Solar vs RTG)
         const powerKey = document.getElementById('power-select') ? document.getElementById('power-select').value : 'Solar';
         let currentLivePower = totalPower;
         if (powerKey === 'Solar') {
-            // Solar power degrades significantly further out in the solar system (scaled by target AU distance)
             let solarDecayFactor = Math.max(0.15, 1 - (probeProgress * (activeTarget.distAU / 8)));
             currentLivePower = Math.round(powerSystems.Solar.power * solarDecayFactor);
         }
@@ -1438,23 +1513,19 @@ function drawSpace() {
             dashPower.style.color = currentLivePower < activeTarget.reqPower ? '#f85149' : '#e6edf3';
         }
 
-        // 3. Data Throughput Attenuation over Deep Space Distance
         const dashKbps = document.getElementById('dash-kbps');
         if (dashKbps) {
-            // Slight signal attenuation jitter over distance
             let attenuation = 1 - (probeProgress * 0.15);
             let liveKbps = Math.round(totalKbps * attenuation);
             dashKbps.innerText = `${liveKbps} kbps`;
         }
 
-        // 4. Shield Integrity Display Sync
         const dashShield = document.getElementById('dash-shield');
         if (dashShield) {
             dashShield.innerText = `${currentShielding}%`;
             dashShield.style.color = currentShielding < activeTarget.reqShielding ? '#f0883e' : '#e6edf3';
         }
 
-        // Trigger Mid-Flight Emergency Anomaly Event
         if (probeProgress > 0.45 && probeProgress < 0.50 && !anomalyTriggered && !anomalyResolved) {
             anomalyTriggered = true;
             triggerRandomChallenge();
@@ -1524,7 +1595,6 @@ function evaluateMission() {
     let finalScore = 0;
     let grade = 'F';
 
-    // Reset Dashboard Status Badge
     const dashBadge = document.getElementById('dash-status-badge');
     if (dashBadge) {
         dashBadge.innerText = "MISSION COMPLETE";
@@ -1574,36 +1644,30 @@ function evaluateMission() {
         const budgetBonus = (totalBudget - totalCost);
         finalScore = Math.round((sciencePoints * 10 * dataEfficiency) + budgetBonus);
 
-        // --- TEAM MODE COMPETING PRIORITIES EVALUATION ---
         if (gameMode === "team") {
             teamObjectivesMet = 0;
             let teamDebrief = "<br><br><strong>TEAM SYNERGY REPORT:</strong><br>";
 
-            // Commander KPI: Saved at least 150M
             if (budgetBonus >= 150) { teamObjectivesMet++; teamDebrief += `✅ Commander (CMD) met financial goals.<br>`; }
             else { teamDebrief += `❌ Commander (CMD) overspent the budget.<br>`; }
 
-            // Engineer KPI: Mass under 1000kg
             if (totalMass <= 1000) { teamObjectivesMet++; teamDebrief += `✅ Lead Engineer (ENG) optimized payload mass.<br>`; }
             else { teamDebrief += `❌ Lead Engineer (ENG) built a heavy, inefficient craft.<br>`; }
 
-            // Scientist KPI: High-Tier Science
             if (instKey === 'Radar' || instKey === 'Spectrometer') { teamObjectivesMet++; teamDebrief += `✅ Chief Scientist (SCI) secured high-yield data.<br>`; }
             else { teamDebrief += `❌ Chief Scientist (SCI) compromised on science sensors.<br>`; }
 
-            // Flight Director KPI: Fast Data Downlink
             if (totalKbps >= 500) { teamObjectivesMet++; teamDebrief += `✅ Flight Director (FD) established high-bandwidth link.<br>`; }
             else { teamDebrief += `❌ Flight Director (FD) accepted sub-optimal telemetry.<br>`; }
 
-            // Negotiation Score Multiplier
             if (teamObjectivesMet === 4) {
-                finalScore += 500; // Perfect coordination bonus
+                finalScore += 500;
                 teamDebrief += "<br>🌟 <strong style='color:#a5d6ff;'>FLAWLESS COORDINATION: +500 PTS</strong>";
             } else if (teamObjectivesMet >= 2) {
                 finalScore += 150;
                 teamDebrief += "<br>🤝 <strong style='color:#2ea043;'>ADEQUATE COMPROMISE: +150 PTS</strong>";
             } else {
-                finalScore -= 200; // Penalty for poor teamwork
+                finalScore -= 200;
                 teamDebrief += "<br>⚠️ <strong style='color:#f85149;'>POOR SYNERGY: -200 PTS</strong>";
             }
             
@@ -1614,7 +1678,6 @@ function evaluateMission() {
         else if (finalScore > 900) grade = 'A';
         else grade = 'B';
 
-        // NOTE: Uses innerHTML instead of innerText to render the Team Synergy <br> and <strong> tags
         if (debrief) debrief.innerHTML = "OPTIMAL SUCCESS: All scientific goals fulfilled for " + activeTarget.name + "!" + bottleneckWarning;
         missionStatus = "SUCCESSFUL";
         audioWin.currentTime = 0;
@@ -1643,7 +1706,6 @@ function evaluateMission() {
     if (document.getElementById('current-grade')) document.getElementById('current-grade').innerText = grade;
     if (document.getElementById('score-display')) document.getElementById('score-display').classList.remove('hidden');
 
-    // Automatically archive the completed mission into past mission history
     archiveCurrentMission();
 }
 
@@ -1777,6 +1839,114 @@ function closeWelcomeModal() {
         welcomeModal.style.display = 'none';
     }
 }
+
+const vizCanvas = document.getElementById('missionVizCanvas');
+const vizCtx = vizCanvas ? vizCanvas.getContext('2d') : null;
+let vizOrbitAngle = 0;
+
+function renderMissionViz() {
+    if (!vizCtx || !vizCanvas) return;
+    
+    const w = vizCanvas.width;
+    const h = vizCanvas.height;
+    
+    // Center the Sun origin perfectly in the middle of the canvas
+    const sunX = w / 2;
+    const sunY = h / 2;
+
+    // Clear canvas background
+    vizCtx.fillStyle = '#020408';
+    vizCtx.fillRect(0, 0, w, h);
+
+    // --- 1. DRAW SUN ---
+    vizCtx.beginPath();
+    vizCtx.arc(sunX, sunY, 16, 0, Math.PI * 2);
+    vizCtx.fillStyle = '#f0a500';
+    vizCtx.shadowBlur = 12;
+    vizCtx.shadowColor = '#f0a500';
+    vizCtx.fill();
+    vizCtx.shadowBlur = 0;
+
+    // Sun Label
+    vizCtx.fillStyle = '#f0a500';
+    vizCtx.font = 'bold 10px monospace';
+    vizCtx.textAlign = 'center';
+    vizCtx.fillText('SUN', sunX, sunY - 22);
+
+    // --- 2. DRAW TARGET ORBIT & PLANET ---
+    const orbitRadius = activeTarget.distAU * 18; 
+
+    vizCtx.beginPath();
+    vizCtx.arc(sunX, sunY, orbitRadius, 0, Math.PI * 2);
+    vizCtx.strokeStyle = 'rgba(48, 54, 61, 0.8)';
+    vizCtx.setLineDash([3, 3]);
+    vizCtx.stroke();
+    vizCtx.setLineDash([]);
+
+    const targetX = sunX + Math.cos(vizOrbitAngle) * orbitRadius;
+    const targetY = sunY + Math.sin(vizOrbitAngle) * orbitRadius;
+
+    vizCtx.beginPath();
+    vizCtx.arc(targetX, targetY, 7, 0, Math.PI * 2);
+    vizCtx.fillStyle = activeTarget.color;
+    vizCtx.fill();
+
+    // Target Destination Label
+    vizCtx.fillStyle = activeTarget.color;
+    vizCtx.fillText(activeTarget.name.split(' ')[0].toUpperCase(), targetX, targetY - 14);
+
+    // --- 3. DRAW EARTH & LAUNCH NODE ---
+    const earthX = sunX - 45;
+    const earthY = sunY;
+
+    vizCtx.beginPath();
+    vizCtx.arc(earthX, earthY, 6, 0, Math.PI * 2);
+    vizCtx.fillStyle = '#58a6ff';
+    vizCtx.fill();
+
+    // Earth Label
+    vizCtx.fillStyle = '#58a6ff';
+    vizCtx.fillText('EARTH', earthX, earthY + 18);
+
+    // --- 4. DRAW TRANSFER TRAJECTORY & MISSION SPACECRAFT ---
+    vizCtx.beginPath();
+    vizCtx.moveTo(earthX, earthY);
+    vizCtx.quadraticCurveTo((earthX + targetX) / 2, sunY - 35, targetX, targetY);
+    vizCtx.strokeStyle = '#58a6ff';
+    vizCtx.lineWidth = 1.5;
+    vizCtx.stroke();
+
+    if (isMissionActive) {
+        let craftX = earthX + (targetX - earthX) * probeProgress;
+        let craftY = earthY + (targetY - earthY) * probeProgress;
+
+        vizCtx.beginPath();
+        vizCtx.arc(craftX, craftY, 4.5, 0, Math.PI * 2);
+        vizCtx.fillStyle = '#ffffff';
+        vizCtx.fill();
+
+        // Spacecraft / Mission Label
+        vizCtx.fillStyle = '#ffffff';
+        vizCtx.font = 'bold 9px monospace';
+        vizCtx.fillText('🚀 MISSION PROBE', craftX, craftY - 10);
+    }
+
+    // Reset text alignment for other elements
+    vizCtx.textAlign = 'left';
+
+    // Update HTML HUD Overlay text dynamically
+    const hudTarget = document.getElementById('vizHudTarget');
+    const hudDist = document.getElementById('vizHudDist');
+    if (hudTarget) hudTarget.innerText = `TARGET: ${activeTarget.name}`;
+    if (hudDist) hudDist.innerText = `SEPARATION DISTANCE: ${activeTarget.distAU} AU`;
+
+    vizOrbitAngle += 0.005;
+
+    requestAnimationFrame(renderMissionViz);
+}
+
+// Initialize the Mission Viz loop on startup
+renderMissionViz();
 
 // SAFE INITIAL STARTUP EXECUTION
 updateSettings();
