@@ -10,11 +10,12 @@
 
     <link rel="stylesheet" href="style.css">
     
-    <!-- LIBRARIES: JSZip & Three.js -->
+    <!-- LIBRARIES: JSZip, Three.js & Live Cross-Device Multiplayer Relay -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
 
-    <!-- FIREBASE MULTIPLAYER ENGINES (v8 Compat) -->
+    <!-- FIREBASE COMPAT (Kept for Global Leaderboard / Reviews in app.js) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -107,10 +108,27 @@
         transform: translateX(4px);
       }
 
-.force-hidden {
-    display: none !important;
-}
+      .force-hidden {
+        display: none !important;
+      }
 
+      .crew-member-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        background: #161b22;
+        border: 1px solid #2ea043;
+        padding: 7px 10px;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+      }
+
+      .station-locked {
+        opacity: 0.62;
+        position: relative;
+      }
     </style>
 </head>
 <body style="position: relative; margin: 0;">
@@ -133,7 +151,7 @@
                 <span class="hud-tag">PRIMARY FLIGHT DECK // IDLE STATUS</span>
             </div>
             
-            <h2>WARP INITIALIZATION & CHECKLIST</h2>
+            <h2>WARP INITIALIZATION &amp; CHECKLIST</h2>
             
             <!-- PRESS TO START BUTTON -->
             <button id="start-loader-btn" onclick="startLoadingSequence();" style="margin: 20px 0; background: #238636; border: 1px solid #2ea043; color: white; padding: 12px 28px; font-family: monospace; font-weight: bold; font-size: 1rem; border-radius: 4px; cursor: pointer; letter-spacing: 2px; box-shadow: 0 0 10px rgba(35, 134, 54, 0.5);">
@@ -151,7 +169,7 @@
         </div>
     </div>
 
-<!-- HOW TO PLAY TUTORIAL MODAL -->
+    <!-- HOW TO PLAY TUTORIAL MODAL -->
     <div id="how-to-play-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 4, 8, 0.92); display: none; align-items: center; justify-content: center; z-index: 2100; font-family: monospace;">
         <div class="modal-content" style="background: #0d1117; border: 1px solid #30363d; padding: 30px; border-radius: 8px; max-width: 650px; width: 90%; text-align: left; box-shadow: 0 0 25px rgba(88, 166, 255, 0.25); display: flex; flex-direction: column; max-height: 85vh;">
             <h1 style="color: #58a6ff; margin-bottom: 5px; margin-top: 0; font-size: 1.4rem; text-align: center;">📖 HOW TO PLAY: MISSION BRIEFING</h1>
@@ -163,7 +181,7 @@
                 <p>Select your destination wisely between <strong>Europa</strong> (Jupiter), <strong>Titan</strong> (Saturn), or <strong>16 Psyche</strong> (Asteroid Belt). Each moon or asteroid imposes distinct engineering hurdles, such as intense Jovian radiation belts, cryogenic nitrogen atmospheres, or metallic core magnetic anomalies.</p>
                 
                 <h3 style="color: #58a6ff;">2. DEPLOYMENT MODES</h3>
-                <p>Choose between <strong>Solo Flight</strong> or <strong>Team Mode</strong> (supporting a maximum of <strong>4 players</strong>). In Team Mode, synchronize with your crew via Firebase and divide responsibilities across four specialized crew roles:</p>
+                <p>Choose between <strong>Solo Flight</strong> or <strong>Team Mode</strong> (supporting a maximum of <strong>4 players</strong>). In Team Mode, synchronize live with your crew across devices; crew roles automatically adapt to 1, 2, 3, or 4 logged-in players:</p>
                 <ul style="margin: 5px 0 15px 20px; color: #8b949e; padding: 0;">
                     <li><strong>Commander (CMD):</strong> Budget credits, difficulty tier, and launch vehicle control.</li>
                     <li><strong>Lead Engineer (ENG):</strong> Power generators (Solar vs. RTG) and radiation shielding.</li>
@@ -178,9 +196,9 @@
                 <p>Inspect your spacecraft in real time using the <strong>Realistic 3D WebGL Hangar</strong> (click and drag to rotate). Monitor real-time telemetry, power draws, data throughput, and fuel consumption along the <strong>Mission Viz Interplanetary Trajectory Map</strong> during transit.</p>
 
                 <h3 style="color: #58a6ff;">5. MID-FLIGHT ANOMALIES &amp; DEBRIEFS</h3>
-                <p>Handle destination-specific emergency anomalies mid-flight by coordinating tactical choices with your team. Complete missions to generate diagnostic optimization reports, transmission records for the <strong>Global Hall of Fame</strong>, and shareable comparisons (`compare.html`).</p>
+                <p>Handle destination-specific emergency anomalies mid-flight by coordinating tactical choices with your team. Complete missions to generate diagnostic optimization reports, transmission records for the <strong>Global Hall of Fame</strong>, and shareable comparisons (<code>compare.html</code>).</p>
                 
-                <p style="color: #2ea043; font-weight: bold; text-align: center; margin-top: 20px;">↓ You have reached the end of the briefing briefing. Accept mission below! ↓</p>
+                <p style="color: #2ea043; font-weight: bold; text-align: center; margin-top: 20px;">↓ You have reached the end of the briefing. Accept mission below! ↓</p>
             </div>
 
             <!-- ACCEPT MISSION BUTTON (Initially Disabled) -->
@@ -190,39 +208,73 @@
         </div>
     </div>
     
-    <!-- MULTIPLAYER LOBBY MODAL -->
-    <div id="welcome-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 4, 8, 0.9); display: none; align-items: center; justify-content: center; z-index: 2000; font-family: monospace;">
-        <div class="modal-content" style="background: #0d1117; border: 1px solid #30363d; padding: 30px; border-radius: 8px; max-width: 600px; text-align: center; box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);">
-            <h1 style="color: #58a6ff; margin-bottom: 10px; margin-top: 0;">MISSION DEPLOYMENT</h1>
-            <p style="color: #8b949e; margin-bottom: 30px;">Select your deployment configuration.</p>
+    <!-- MULTIPLAYER LOBBY MODAL (SOLO / HOST / JOIN WITH NAME & COUNTRY) -->
+    <div id="welcome-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 4, 8, 0.92); display: none; align-items: center; justify-content: center; z-index: 2000; font-family: monospace;">
+        <div class="modal-content" style="background: #0d1117; border: 1px solid #30363d; padding: 28px; border-radius: 8px; max-width: 620px; width: 92%; text-align: center; box-shadow: 0 0 25px rgba(88, 166, 255, 0.25); max-height: 90vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:0.72rem; color:#8b949e;">CISS FLIGHT DECK</span>
+                <span id="modal-relay-status" style="font-size:0.72rem; color:#d29922;">🟡 CONNECTING RELAY...</span>
+            </div>
+            <h1 style="color: #58a6ff; margin-bottom: 6px; margin-top: 0; font-size: 1.5rem;">MISSION DEPLOYMENT</h1>
+            <p style="color: #8b949e; margin-bottom: 22px; font-size: 0.85rem;">Select your deployment configuration (1 to 4 Players).</p>
             
             <!-- Main Choice -->
-            <div id="lobby-main" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px;">
-                <button onclick="startSolo()" class="action-btn" style="width: 160px; background: #21262d; border: 1px solid #30363d; color: white; padding: 15px; border-radius: 6px; cursor: pointer; font-family: monospace; font-weight: bold; font-size: 0.9rem;">
+            <div id="lobby-main" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 10px;">
+                <button onclick="startSolo()" class="action-btn" style="flex: 1; min-width: 155px; background: #21262d; border: 1px solid #30363d; color: white; padding: 15px; border-radius: 6px; cursor: pointer; font-family: monospace; font-weight: bold; font-size: 0.9rem;">
                     👤 SOLO FLIGHT
                 </button>
-                <button onclick="showHostScreen()" class="action-btn" style="width: 160px; background: #8957e5; border: 1px solid #6e40c9; color: white; padding: 15px; border-radius: 6px; cursor: pointer; font-family: monospace; font-weight: bold; font-size: 0.9rem;">
+                <button onclick="showHostScreen()" class="action-btn" style="flex: 1; min-width: 155px; background: #8957e5; border: 1px solid #6e40c9; color: white; padding: 15px; border-radius: 6px; cursor: pointer; font-family: monospace; font-weight: bold; font-size: 0.9rem;">
                     📡 HOST TEAM GAME
                 </button>
-                <button onclick="showJoinScreen()" class="action-btn" style="width: 160px; background: #2ea043; border: 1px solid #238636; color: white; padding: 15px; border-radius: 6px; cursor: pointer; font-family: monospace; font-weight: bold; font-size: 0.9rem;">
+                <button onclick="showJoinScreen()" class="action-btn" style="flex: 1; min-width: 155px; background: #2ea043; border: 1px solid #238636; color: white; padding: 15px; border-radius: 6px; cursor: pointer; font-family: monospace; font-weight: bold; font-size: 0.9rem;">
                     🚀 JOIN TEAM GAME
                 </button>
             </div>
 
-            <!-- Host Configuration Screen (Now allows choosing host role) -->
-            <div id="lobby-host" style="display: none; text-align: left;">
-                <h3 style="color: #a5d6ff; border-bottom: 1px solid #30363d; padding-bottom: 5px;">HOST ACTIVE MISSION</h3>
-                <p style="margin: 15px 0; font-size: 0.9rem;">ROOM CODE: <strong id="display-room-code" style="font-size: 1.8rem; color: #d2a8ff; letter-spacing: 4px; background: #21262d; padding: 6px 12px; border-radius: 4px; border: 1px solid #30363d;">----</strong></p>
+            <!-- Solo Configuration Screen (Name & Country) -->
+            <div id="lobby-solo" style="display: none; text-align: left;">
+                <h3 style="color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 6px; margin-top: 0;">SOLO MISSION PILOT REGISTRATION</h3>
                 
-                <label style="color: #8b949e; font-size: 0.85rem; display: block; margin-bottom: 5px;">SELECT YOUR CREW ROLE (HOST):</label>
-                <select id="host-role" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 20px; font-family: monospace; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.9rem;">
-                    <option value="cmd">Commander (Budget & Launch Control)</option>
-                    <option value="eng">Lead Engineer (Power & Shields)</option>
-                    <option value="sci">Chief Scientist (Target Destination & Instruments)</option>
-                    <option value="fd">Flight Director (Route Trajectory & Comms)</option>
-                </select>
+                <label style="color: #8b949e; font-size: 0.8rem; display: block; margin-bottom: 5px;">PILOT NAME / CALLSIGN *</label>
+                <input type="text" id="solo-player-name" placeholder="Enter your name..." style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 14px; font-family: monospace; background: #161b22; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.9rem;">
 
-                <p id="host-role-status" style="color: #8b949e; font-size: 0.8rem; margin-bottom: 20px;">Waiting for crew members to connect...</p>
+                <label style="color: #8b949e; font-size: 0.8rem; display: block; margin-bottom: 5px;">COUNTRY *</label>
+                <select id="solo-player-country" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 20px; font-family: monospace; background: #161b22; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.9rem;"></select>
+
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="returnToLobbyMain()" class="action-btn" style="flex: 1; background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace;">
+                        &larr; BACK
+                    </button>
+                    <button onclick="confirmSoloDeployment()" class="action-btn" style="flex: 2; background: #1f6feb; border: 1px solid #388bfd; color: white; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; letter-spacing: 1px;">
+                        ENTER HANGAR VIEW
+                    </button>
+                </div>
+            </div>
+
+            <!-- Host Configuration Screen (Name, Country, Live Room Code & Live Logged-In Crew) -->
+            <div id="lobby-host" style="display: none; text-align: left;">
+                <h3 style="color: #a5d6ff; border-bottom: 1px solid #30363d; padding-bottom: 6px; margin-top: 0;">HOST TEAM MISSION (MAX 4 PLAYERS)</h3>
+                <p style="margin: 12px 0; font-size: 0.9rem;">SHARE ROOM CODE: <strong id="display-room-code" style="font-size: 1.7rem; color: #d2a8ff; letter-spacing: 4px; background: #21262d; padding: 5px 12px; border-radius: 4px; border: 1px solid #30363d;">----</strong></p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div>
+                        <label style="color: #8b949e; font-size: 0.78rem; display: block; margin-bottom: 4px;">HOST NAME / CALLSIGN *</label>
+                        <input type="text" id="host-player-name" placeholder="Enter your name..." oninput="updateHostIdentityLive()" style="width: 100%; box-sizing: border-box; padding: 9px; font-family: monospace; background: #161b22; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.88rem;">
+                    </div>
+                    <div>
+                        <label style="color: #8b949e; font-size: 0.78rem; display: block; margin-bottom: 4px;">HOST COUNTRY *</label>
+                        <select id="host-player-country" onchange="updateHostIdentityLive()" style="width: 100%; box-sizing: border-box; padding: 9px; font-family: monospace; background: #161b22; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.88rem;"></select>
+                    </div>
+                </div>
+
+                <div style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px; margin-bottom: 16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:0.78rem; color:#58a6ff; font-weight:bold;">LOGGED-IN CREW ROSTER:</span>
+                        <span id="host-crew-count" style="font-size:0.75rem; color:#3fb950;">1 / 4 LOGGED IN</span>
+                    </div>
+                    <div id="host-crew-list" style="font-size:0.8rem; color:#c9d1d9;"></div>
+                    <p style="margin:6px 0 0 0; font-size:0.74rem; color:#8b949e;">Roles adjust automatically for 1, 2, 3, or 4 players. You can enter the hangar now or wait for teammates.</p>
+                </div>
                 
                 <div style="display: flex; gap: 10px;">
                     <button onclick="returnToLobbyMain()" class="action-btn" style="flex: 1; background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace;">
@@ -234,18 +286,28 @@
                 </div>
             </div>
 
-            <!-- Join Screen -->
+            <!-- Join Screen (Name, Country, 4-Digit Code & Live Crew Preview) -->
             <div id="lobby-join" style="display: none; text-align: left;">
-                <h3 style="color: #a5d6ff; border-bottom: 1px solid #30363d; padding-bottom: 5px;">JOIN ACTIVE MISSION</h3>
-                <input type="text" id="join-room-code" placeholder="Enter 4-Digit Room Code..." style="width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; font-family: monospace; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 1rem; text-align: center; letter-spacing: 2px;" oninput="fetchAvailableRolesForRoom()">
+                <h3 style="color: #a5d6ff; border-bottom: 1px solid #30363d; padding-bottom: 6px; margin-top: 0;">JOIN ACTIVE TEAM MISSION</h3>
                 
-                <label style="color: #8b949e; font-size: 0.85rem; display: block; margin-bottom: 5px;">SELECT YOUR CREW ROLE:</label>
-                <select id="join-role" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 25px; font-family: monospace; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.9rem;">
-                    <option value="cmd" id="opt-cmd">Commander (Budget & Launch Control)</option>
-                    <option value="eng" id="opt-eng">Lead Engineer (Power & Shields)</option>
-                    <option value="sci" id="opt-sci">Chief Scientist (Target Destination & Instruments)</option>
-                    <option value="fd" id="opt-fd">Flight Director (Route Trajectory & Comms)</option>
-                </select>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div>
+                        <label style="color: #8b949e; font-size: 0.78rem; display: block; margin-bottom: 4px;">YOUR NAME / CALLSIGN *</label>
+                        <input type="text" id="join-player-name" placeholder="Enter your name..." style="width: 100%; box-sizing: border-box; padding: 9px; font-family: monospace; background: #161b22; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.88rem;">
+                    </div>
+                    <div>
+                        <label style="color: #8b949e; font-size: 0.78rem; display: block; margin-bottom: 4px;">YOUR COUNTRY *</label>
+                        <select id="join-player-country" style="width: 100%; box-sizing: border-box; padding: 9px; font-family: monospace; background: #161b22; border: 1px solid #30363d; color: white; border-radius: 4px; font-size: 0.88rem;"></select>
+                    </div>
+                </div>
+
+                <label style="color: #8b949e; font-size: 0.78rem; display: block; margin-bottom: 4px;">HOST'S 4-DIGIT ROOM CODE *</label>
+                <input type="text" id="join-room-code" maxlength="4" placeholder="Enter 4-Digit Code..." style="width: 100%; box-sizing: border-box; padding: 11px; margin-bottom: 12px; font-family: monospace; background: #161b22; border: 1px solid #30363d; color: #d2a8ff; font-weight: bold; border-radius: 4px; font-size: 1.15rem; text-align: center; letter-spacing: 4px;" oninput="fetchAvailableRolesForRoom()">
+
+                <div id="join-preview-box" style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px; margin-bottom: 16px;">
+                    <div id="join-room-status" style="font-size:0.78rem; color:#8b949e;">Enter the 4-digit code given by your host to connect.</div>
+                    <div id="join-crew-list" style="margin-top:6px;"></div>
+                </div>
                 
                 <div style="display: flex; gap: 10px;">
                     <button onclick="returnToLobbyMain()" class="action-btn" style="flex: 1; background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace;">
@@ -260,12 +322,13 @@
             <!-- Room Active Status -->
             <div id="lobby-active" style="display: none;">
                 <h3 style="color: #58a6ff;">NETWORK ESTABLISHED</h3>
-                <p style="margin: 20px 0;">ROOM CODE: <strong id="active-room-code" style="font-size: 2.5rem; color: #d2a8ff; letter-spacing: 6px; background: #21262d; padding: 10px 20px; border-radius: 6px; border: 1px solid #30363d;">----</strong></p>
-                <p id="role-display-text" style="color: #8b949e; font-size: 0.9rem;">Awaiting crew members...</p>
+                <p style="margin: 14px 0;">ROOM CODE: <strong id="active-room-code" style="font-size: 2.2rem; color: #d2a8ff; letter-spacing: 6px; background: #21262d; padding: 8px 18px; border-radius: 6px; border: 1px solid #30363d;">----</strong></p>
+                <div id="active-crew-list" style="text-align: left; margin: 14px 0;"></div>
+                <p id="role-display-text" style="color: #3fb950; font-size: 0.85rem;">Connected to live crew telemetry.</p>
                 
-                <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button onclick="returnToLobbyMain()" class="action-btn" style="flex: 1; background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace;">
-                        &larr; BACK
+                        &larr; LEAVE ROOM
                     </button>
                     <button onclick="closeWelcomeModal()" class="action-btn" style="flex: 2; background: #1f6feb; border: 1px solid #388bfd; color: white; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; letter-spacing: 1px;">
                         ENTER HANGAR VIEW
@@ -281,7 +344,7 @@
             <img src="ciss-logo.png" alt="CISS Logo">
         </div>
         <h1>SPACE MISSION SYSTEMS ARCHITECT</h1>
-        <p class="subtitle">INTERPLANETARY SYSTEMS ENGINEERING & TRADE-OFF SIMULATION</p>
+        <p class="subtitle">INTERPLANETARY SYSTEMS ENGINEERING &amp; TRADE-OFF SIMULATION</p>
 
         <!-- MODULE NAVIGATION BUTTONS PLACED BELOW HEADINGS -->
         <div class="mode-nav-grid">
@@ -335,24 +398,24 @@
                 </div>
             </div>
 
-<!-- NASA Mission Viz Integration Panel -->
-<div class="panel" style="margin-top: 20px; background: #0d1117; border: 1px solid #30363d; padding: 15px; border-radius: 6px; font-family: monospace;">
-    <h3 style="color: #58a6ff; font-size: 0.95rem; margin-top: 0; border-bottom: 1px solid #21262d; padding-bottom: 6px;">
-        🌌 MISSION VIZ: INTERPLANETARY TRAJECTORY MAP
-    </h3>
-    <div style="position: relative; width: 100%; height: 240px; background: #020408; border-radius: 4px; overflow: hidden; border: 1px solid #30363d;">
-        <canvas id="missionVizCanvas" width="800" height="240" style="width: 100%; height: 100%; display: block;"></canvas>
-        
-        <!-- HTML HUD OVERLAY -->
-        <div id="vizHud" style="position: absolute; top: 12px; left: 12px; background: rgba(13, 17, 23, 0.85); border: 1px solid #30363d; padding: 8px 12px; border-radius: 4px; pointer-events: none; font-size: 0.75rem; line-height: 1.4;">
-            <div id="vizHudTarget" style="color: #58a6ff; font-weight: bold;">TARGET: Europa (Jupiter)</div>
-            <div id="vizHudDist" style="color: #8b949e;">SEPARATION DISTANCE: 5.2 AU</div>
-        </div>
-    </div>
-    <p style="font-size: 0.75rem; color: #8b949e; margin: 8px 0 0 0;">
-        Real-time spatial visualization adapted from NASA Mission Viz architecture principles.
-    </p>
-</div>
+            <!-- NASA Mission Viz Integration Panel -->
+            <div class="panel" style="margin-top: 20px; background: #0d1117; border: 1px solid #30363d; padding: 15px; border-radius: 6px; font-family: monospace;">
+                <h3 style="color: #58a6ff; font-size: 0.95rem; margin-top: 0; border-bottom: 1px solid #21262d; padding-bottom: 6px;">
+                    🌌 MISSION VIZ: INTERPLANETARY TRAJECTORY MAP
+                </h3>
+                <div style="position: relative; width: 100%; height: 240px; background: #020408; border-radius: 4px; overflow: hidden; border: 1px solid #30363d;">
+                    <canvas id="missionVizCanvas" width="800" height="240" style="width: 100%; height: 100%; display: block;"></canvas>
+                    
+                    <!-- HTML HUD OVERLAY -->
+                    <div id="vizHud" style="position: absolute; top: 12px; left: 12px; background: rgba(13, 17, 23, 0.85); border: 1px solid #30363d; padding: 8px 12px; border-radius: 4px; pointer-events: none; font-size: 0.75rem; line-height: 1.4;">
+                        <div id="vizHudTarget" style="color: #58a6ff; font-weight: bold;">TARGET: Europa (Jupiter)</div>
+                        <div id="vizHudDist" style="color: #8b949e;">SEPARATION DISTANCE: 5.2 AU</div>
+                    </div>
+                </div>
+                <p style="font-size: 0.75rem; color: #8b949e; margin: 8px 0 0 0;">
+                    Real-time spatial visualization adapted from NASA Mission Viz architecture principles.
+                </p>
+            </div>
             
             <div class="objective-card">
                 <p id="target-display">Selected Target: Europa (Jupiter) | Distance: 5.2 AU</p>
@@ -364,16 +427,16 @@
                 <div class="setting">
                     <label for="difficulty-select">MISSION TIER:</label>
                     <select id="difficulty-select" onchange="pushStateToNetwork(); playClick();">
-                        <option value="Cadet">Cadet (Generous $1,500M Budget & Lower Constraints)</option>
+                        <option value="Cadet">Cadet (Generous $1,500M Budget &amp; Lower Constraints)</option>
                         <option value="Commander" selected>Commander (Standard Simulation - $1,000M)</option>
-                        <option value="Architect">Architect (Hardcore $750M Budget & Strict Hazards)</option>
+                        <option value="Architect">Architect (Hardcore $750M Budget &amp; Strict Hazards)</option>
                     </select>
                 </div>
             </div>
 
             <!-- ROUTE WRAPPER -->
             <div id="control-route">
-                <h2>3. TRAJECTORY & FLIGHT PLAN (Flight Director)</h2>
+                <h2>3. TRAJECTORY &amp; FLIGHT PLAN (Flight Director)</h2>
                 <div class="setting">
                     <label for="route-select">FLIGHT ROUTE:</label>
                     <select id="route-select" onchange="pushStateToNetwork(); playClick();">
@@ -384,10 +447,10 @@
             </div>
 
             <!-- PILOT METRICS (Visible to all) -->
-            <h2>4. PILOT CALLSIGN & METRICS</h2>
+            <h2>4. PILOT CALLSIGN &amp; METRICS</h2>
             <div class="tracker-box">
                 <div class="pilot-input-group">
-                    <label for="player-name-input">PILOT CALLSIGN & COUNTRY:</label>
+                    <label for="player-name-input">PILOT CALLSIGN &amp; COUNTRY:</label>
                     <div class="pilot-fields" style="display: flex; align-items: center; gap: 8px;">
                         <img id="selected-flag-preview" src="" alt="Flag Preview" style="width: 24px; height: 18px; border-radius: 2px; object-fit: cover;">
                         
@@ -398,7 +461,7 @@
                             <option value="dz">Algeria</option>
                             <option value="ad">Andorra</option>
                             <option value="ao">Angola</option>
-                            <option value="ag">Antigua & Barbuda</option>
+                            <option value="ag">Antigua &amp; Barbuda</option>
                             <option value="ar">Argentina</option>
                             <option value="am">Armenia</option>
                             <option value="au">Australia</option>
@@ -414,7 +477,7 @@
                             <option value="bj">Benin</option>
                             <option value="bt">Bhutan</option>
                             <option value="bo">Bolivia</option>
-                            <option value="ba">Bosnia & Herzegovina</option>
+                            <option value="ba">Bosnia &amp; Herzegovina</option>
                             <option value="bw">Botswana</option>
                             <option value="br">Brazil</option>
                             <option value="bn">Brunei</option>
@@ -574,7 +637,7 @@
 
             <!-- REALISTIC 3D WEBGL HANGAR INSPECTION VIEWPORT (Visible to all) -->
             <div style="margin-bottom: 20px;">
-                <label style="display: block; font-family: monospace; font-size: 0.85rem; color: #58a6ff; margin-bottom: 6px;">🔍 REALISTIC 3D HANGAR (CLICK & DRAG TO ROTATE)</label>
+                <label style="display: block; font-family: monospace; font-size: 0.85rem; color: #58a6ff; margin-bottom: 6px;">🔍 REALISTIC 3D HANGAR (CLICK &amp; DRAG TO ROTATE)</label>
                 <div id="hangar-container" style="position: relative; width: 100%; height: 220px; background: radial-gradient(circle, #0d1b2a 0%, #080c14 100%); border-radius: 6px; overflow: hidden; border: 1px solid #30363d; cursor: grab;">
                     <!-- Three.js Canvas will be appended here automatically -->
                 </div>
@@ -641,9 +704,12 @@
         <!-- Simulation Viewport & Standalone Leaderboard Column -->
         <section class="viewport">
 
-            <!-- DEPLOYMENT CONFIGURATION & LEARN THE BASICS -->
+            <!-- DEPLOYMENT CONFIGURATION, LIVE CREW ROSTER & LEARN THE BASICS -->
             <div style="background: #0d1117; border: 1px solid #30363d; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-family: monospace;">
-                <label style="display: block; font-size: 0.8rem; color: #8b949e; margin-bottom: 8px;">MISSION DEPLOYMENT MODE:</label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label style="font-size: 0.8rem; color: #8b949e;">MISSION DEPLOYMENT MODE:</label>
+                    <span id="dash-relay-status" style="font-size: 0.72rem; color: #d29922;">🟡 CONNECTING...</span>
+                </div>
                 <div style="display: flex; gap: 8px; margin-bottom: 12px;">
                     <button onclick="openLobbyModalAt('solo')" style="flex: 1; background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 8px; border-radius: 4px; cursor: pointer; font-family: monospace; font-size: 0.75rem; font-weight: bold;">
                         👤 SOLO
@@ -655,13 +721,23 @@
                         🚀 JOIN TEAM
                     </button>
                 </div>
+
+                <!-- LIVE LOGGED-IN CREW ROSTER CARD (VISIBLE WHEN IN SOLO OR MULTIPLAYER) -->
+                <div id="dash-crew-panel" style="display:none; background:#090d13; border:1px solid #30363d; border-radius:6px; padding:10px; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #21262d; padding-bottom:5px;">
+                        <span id="dash-room-label" style="color:#58a6ff; font-weight:bold; font-size:0.82rem;">ACTIVE CREW ROSTER</span>
+                        <span id="dash-crew-count" style="background:#238636; color:white; padding:2px 7px; border-radius:4px; font-size:0.72rem;">1 / 4 LOGGED IN</span>
+                    </div>
+                    <div id="dash-crew-list"></div>
+                    <div id="dash-sync-feed" style="font-size:0.74rem; color:#a5d6ff; margin-top:4px; font-style:italic;"></div>
+                </div>
                 
                 <a href="basics.html" target="_blank" style="display: block; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #1f6feb 0%, #238636 100%); border: 1px solid #388bfd; color: white; padding: 12px; border-radius: 6px; font-family: monospace; font-weight: bold; text-decoration: none; text-align: center; letter-spacing: 2px; box-shadow: 0 0 15px rgba(31, 111, 235, 0.4); transition: all 0.3s ease;">
                     LEARN THE BASICS
                 </a>
             </div>
 
-            <h2>6. ORBIT TELEMETRY & MISSION CONTROL</h2>
+            <h2>6. ORBIT TELEMETRY &amp; MISSION CONTROL</h2>
             
             <!-- REAL-TIME MISSION RESOURCE DASHBOARD -->
             <div style="background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin-bottom: 15px; font-family: monospace;">
@@ -717,7 +793,7 @@
             <!-- DEBRIEF & SCIENTIFIC YIELD RESULT -->
             <div id="debrief-box" class="debrief">
                 <h3>MISSION EVALUATION DEBRIEF</h3>
-                <p id="debrief-text">Target changed to Europa. Design systems to achieve: Confirm subsurface liquid ocean & evaluate habitability / biosignatures.</p>
+                <p id="debrief-text">Target changed to Europa. Design systems to achieve: Confirm subsurface liquid ocean &amp; evaluate habitability / biosignatures.</p>
                 <div id="score-display" class="score-card hidden">
                     <p>SCIENCE YIELD SCORE: <strong id="current-score">0</strong> PTS</p>
                     <p>MISSION GRADE: <span id="current-grade">N/A</span></p>
@@ -797,7 +873,7 @@
                 <h3 style="color: #58a6ff; margin-bottom: 10px; font-size: 1rem;">CEYLON INSTITUTE OF SPACE SCIENCE (CISS)</h3>
                 <p style="font-size: 0.85rem; line-height: 1.5; margin-bottom: 8px;">📍 Educational Institution, Colombo, Sri Lanka</p>
                 <p style="font-size: 0.85rem; line-height: 1.5; margin-bottom: 8px;">📧 Email: ciss@ceylonspacescience.com | spathirana@ceylonspacescience.com</p>
-                <p style="font-size: 0.85rem; line-height: 1.5;">🌐 Web: https://sites.google.com/ceylonspacescience.com/ciss-space-science/home?pli=1&authuser=0</p>
+                <p style="font-size: 0.85rem; line-height: 1.5;">🌐 Web: https://sites.google.com/ceylonspacescience.com/ciss-space-science/home?pli=1&amp;authuser=0</p>
             </div>
 
             <!-- Player Review & Comments Section -->
@@ -821,5 +897,547 @@
     </footer>
 
     <script src="app.js"></script>
+
+    <!-- LIVE CROSS-DEVICE CO-OP MULTIPLAYER ENGINE (MAX 4 PLAYERS, DYNAMIC ROLE SCALING) -->
+    <script>
+        (function () {
+            const COOP_TOPIC_BASE = 'ciss_space_architect_v2/coop_mission';
+            const myClientId = 'pilot_' + Math.random().toString(16).substr(2, 8);
+            const coopMqtt = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
+                clientId: myClientId,
+                clean: true,
+                reconnectPeriod: 2000
+            });
+
+            let coopRelayOnline = false;
+            let activeRoomCode = null;
+            let isHostPlayer = false;
+            let isApplyingRemote = false;
+            let lastLaunchSignal = 0;
+            let lastAnomalySignal = 0;
+
+            let coopRoomState = {
+                roomCode: null,
+                players: [], // Max 4: [{ id, name, countryCode, countryName, isHost }]
+                target: 'Europa',
+                difficulty: 'Commander',
+                route: 'Direct',
+                launcher: 'FalconHeavy',
+                power: 'Solar',
+                comm: 'LGA',
+                instrument: 'Camera',
+                shield: '50',
+                launchTrigger: 0,
+                anomalyChoice: null,
+                lastAction: ''
+            };
+
+            // Populate Solo, Host & Join Country dropdowns from #player-flag-select
+            function syncCountryDropdowns() {
+                const masterSelect = document.getElementById('player-flag-select');
+                if (!masterSelect) return;
+                const optionsHtml = '<option value="" disabled selected>-- Select Country --</option>' + masterSelect.innerHTML;
+                ['solo-player-country', 'host-player-country', 'join-player-country'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = optionsHtml;
+                });
+            }
+            syncCountryDropdowns();
+
+            function getCountryNameByCode(code) {
+                const masterSelect = document.getElementById('player-flag-select');
+                if (!masterSelect) return code;
+                const opt = Array.from(masterSelect.options).find(o => o.value === code);
+                return opt ? opt.text : code;
+            }
+
+            function applyIdentityToMainDashboard(name, countryCode) {
+                const nameInput = document.getElementById('player-name-input');
+                const flagSelect = document.getElementById('player-flag-select');
+                if (nameInput && name) nameInput.value = name;
+                if (flagSelect && countryCode) {
+                    flagSelect.value = countryCode;
+                    if (typeof updateFlagPreview === 'function') updateFlagPreview();
+                }
+            }
+
+            coopMqtt.on('connect', () => {
+                coopRelayOnline = true;
+                ['modal-relay-status', 'dash-relay-status'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.innerText = '🟢 LIVE MULTIPLAYER ONLINE';
+                        el.style.color = '#3fb950';
+                    }
+                });
+            });
+
+            coopMqtt.on('offline', () => {
+                coopRelayOnline = false;
+                ['modal-relay-status', 'dash-relay-status'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.innerText = '🟡 RECONNECTING...';
+                        el.style.color = '#d29922';
+                    }
+                });
+            });
+
+            coopMqtt.on('message', (topic, payload) => {
+                if (!activeRoomCode || topic !== `${COOP_TOPIC_BASE}/${activeRoomCode}`) return;
+                let incoming;
+                try { incoming = JSON.parse(payload.toString()); } catch (e) { return; }
+                if (!incoming || !Array.isArray(incoming.players)) return;
+
+                // Enforce max 4 players
+                const alreadyInRoom = incoming.players.some(p => p.id === myClientId);
+                if (!alreadyInRoom && incoming.players.length >= 4) {
+                    alert("⚠️ This team room already has the maximum of 4 players logged in!");
+                    coopMqtt.unsubscribe(`${COOP_TOPIC_BASE}/${activeRoomCode}`);
+                    activeRoomCode = null;
+                    return;
+                }
+
+                // If we are joining and not yet recorded in the room's player list, append ourselves and broadcast
+                const myPending = coopRoomState.players.find(p => p.id === myClientId);
+                if (!alreadyInRoom && myPending) {
+                    incoming.players.push(myPending);
+                    incoming.lastAction = `${myPending.name} (${myPending.countryName}) logged in!`;
+                    coopRoomState = incoming;
+                    publishCoopRoom();
+                } else {
+                    coopRoomState = incoming;
+                }
+
+                applyIncomingStateToUI(coopRoomState);
+            });
+
+            // Dynamic role distribution for 1, 2, 3, or 4 logged-in players
+            function getRoleAssignments(playerCount) {
+                if (playerCount <= 1) {
+                    return [
+                        { label: 'ALL SYSTEMS COMMAND', stations: ['target', 'difficulty', 'route', 'launcher', 'power', 'comm', 'instrument', 'shield'] }
+                    ];
+                }
+                if (playerCount === 2) {
+                    return [
+                        { label: 'CMD + SCI (Target, Tier, Launcher, Payload)', stations: ['target', 'difficulty', 'launcher', 'instrument'] },
+                        { label: 'ENG + FD (Power, Shields, Route, Comms)', stations: ['power', 'shield', 'route', 'comm'] }
+                    ];
+                }
+                if (playerCount === 3) {
+                    return [
+                        { label: 'CMD + FD (Tier, Launcher, Route, Comms)', stations: ['difficulty', 'launcher', 'route', 'comm'] },
+                        { label: 'CHIEF SCIENTIST (Target & Payload)', stations: ['target', 'instrument'] },
+                        { label: 'LEAD ENGINEER (Power & Shields)', stations: ['power', 'shield'] }
+                    ];
+                }
+                return [
+                    { label: 'COMMANDER (Tier & Launcher)', stations: ['difficulty', 'launcher'] },
+                    { label: 'CHIEF SCIENTIST (Target & Payload)', stations: ['target', 'instrument'] },
+                    { label: 'LEAD ENGINEER (Power & Shields)', stations: ['power', 'shield'] },
+                    { label: 'FLIGHT DIRECTOR (Route & Comms)', stations: ['route', 'comm'] }
+                ];
+            }
+
+            function renderCrewLists() {
+                const players = coopRoomState.players || [];
+                const assignments = getRoleAssignments(players.length);
+
+                const html = players.map((p, idx) => {
+                    const roleInfo = assignments[idx] ? assignments[idx].label : 'CREW SPECIALIST';
+                    const isMe = p.id === myClientId ? ' <span style="color:#d2a8ff;">(YOU)</span>' : '';
+                    const hostTag = p.isHost ? ' <span style="color:#58a6ff;">[HOST]</span>' : '';
+                    return `
+                        <div class="crew-member-row">
+                            <span>
+                                <img src="https://flagcdn.com/24x18/${escapeAttr(p.countryCode)}.png" alt="" style="vertical-align:middle; margin-right:6px; border-radius:2px;">
+                                <strong style="color:#e6edf3;">${escapeHtml(p.name)}</strong> (${escapeHtml(p.countryName)})${hostTag}${isMe}
+                            </span>
+                            <span style="color:#3fb950; font-size:0.72rem; text-align:right;">● LOGGED IN<br><span style="color:#8b949e;">${escapeHtml(roleInfo)}</span></span>
+                        </div>
+                    `;
+                }).join('');
+
+                ['host-crew-list', 'active-crew-list', 'dash-crew-list'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = html || '<span style="color:#8b949e;">No crew logged in yet.</span>';
+                });
+
+                const countText = `${players.length} / 4 LOGGED IN`;
+                ['host-crew-count', 'dash-crew-count'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = countText;
+                });
+
+                const dashPanel = document.getElementById('dash-crew-panel');
+                if (dashPanel && players.length > 0) {
+                    dashPanel.style.display = 'block';
+                    document.getElementById('dash-room-label').innerText =
+                        coopRoomState.roomCode === 'SOLO'
+                            ? 'SOLO FLIGHT MANIFEST'
+                            : `TEAM ROOM CODE: ${coopRoomState.roomCode}`;
+                    document.getElementById('dash-sync-feed').innerText = coopRoomState.lastAction || '';
+                }
+
+                // Update station control permissions based on active player count
+                applyStationPermissions(players, assignments);
+            }
+
+            function applyStationPermissions(players, assignments) {
+                const allStations = ['target', 'difficulty', 'route', 'launcher', 'power', 'comm', 'instrument', 'shield'];
+                const myIdx = players.findIndex(p => p.id === myClientId);
+
+                // In solo or before joining, allow full access
+                if (myIdx === -1 || players.length <= 1) {
+                    allStations.forEach(st => setStationEnabled(st, true));
+                    return;
+                }
+
+                const myStations = assignments[myIdx] ? assignments[myIdx].stations : allStations;
+                allStations.forEach(st => {
+                    setStationEnabled(st, myStations.includes(st));
+                });
+            }
+
+            function setStationEnabled(stationKey, enabled) {
+                const wrapper = document.getElementById(`control-${stationKey}`);
+                if (!wrapper) return;
+                if (enabled) {
+                    wrapper.classList.remove('station-locked');
+                } else {
+                    wrapper.classList.add('station-locked');
+                }
+                wrapper.querySelectorAll('button, select, input').forEach(ctrl => {
+                    ctrl.disabled = !enabled;
+                });
+            }
+
+            function captureCurrentBoardState() {
+                const activeTargetBtn = document.querySelector('#control-target .target-card.active span');
+                let target = 'Europa';
+                if (activeTargetBtn) {
+                    const txt = activeTargetBtn.innerText;
+                    if (txt.includes('Titan')) target = 'Titan';
+                    else if (txt.includes('Psyche')) target = 'Psyche';
+                }
+                return {
+                    target: target,
+                    difficulty: document.getElementById('difficulty-select')?.value || 'Commander',
+                    route: document.getElementById('route-select')?.value || 'Direct',
+                    launcher: document.getElementById('launcher-select')?.value || 'FalconHeavy',
+                    power: document.getElementById('power-select')?.value || 'Solar',
+                    comm: document.getElementById('comm-select')?.value || 'LGA',
+                    instrument: document.getElementById('instrument-select')?.value || 'Camera',
+                    shield: document.getElementById('shield-slider')?.value || '50'
+                };
+            }
+
+            function applyIncomingStateToUI(state) {
+                isApplyingRemote = true;
+                try {
+                    // 1. Target planet cards
+                    if (state.target) {
+                        const cards = document.querySelectorAll('#control-target .target-card');
+                        cards.forEach(btn => {
+                            const label = btn.innerText || '';
+                            if (label.includes(state.target) && !btn.classList.contains('active')) {
+                                if (typeof selectTarget === 'function') selectTarget(state.target, btn);
+                            }
+                        });
+                    }
+
+                    // 2. Dropdowns & Slider
+                    const fieldMap = [
+                        ['difficulty-select', state.difficulty],
+                        ['route-select', state.route],
+                        ['launcher-select', state.launcher],
+                        ['power-select', state.power],
+                        ['comm-select', state.comm],
+                        ['instrument-select', state.instrument],
+                        ['shield-slider', state.shield]
+                    ];
+
+                    fieldMap.forEach(([id, val]) => {
+                        const el = document.getElementById(id);
+                        if (el && val !== undefined && String(el.value) !== String(val)) {
+                            el.value = val;
+                        }
+                    });
+
+                    if (typeof updateSettings === 'function') updateSettings();
+                    renderCrewLists();
+
+                    // 3. Synchronized Launch Sequence
+                    if (state.launchTrigger && state.launchTrigger !== lastLaunchSignal) {
+                        lastLaunchSignal = state.launchTrigger;
+                        closeWelcomeModal();
+                        if (typeof originalHandleLaunchClick === 'function') {
+                            originalHandleLaunchClick();
+                        }
+                    }
+
+                    // 4. Synchronized Anomaly Resolution
+                    if (state.anomalyChoice && state.anomalyChoice.id !== lastAnomalySignal) {
+                        lastAnomalySignal = state.anomalyChoice.id;
+                        if (typeof originalHandleChallengeChoice === 'function') {
+                            originalHandleChallengeChoice(state.anomalyChoice.choice);
+                        }
+                    }
+                } finally {
+                    isApplyingRemote = false;
+                }
+            }
+
+            function publishCoopRoom() {
+                if (!activeRoomCode || activeRoomCode === 'SOLO' || !coopRelayOnline) return;
+                coopMqtt.publish(`${COOP_TOPIC_BASE}/${activeRoomCode}`, JSON.stringify(coopRoomState), { retain: true });
+            }
+
+            function hideAllLobbyScreens() {
+                ['lobby-main', 'lobby-solo', 'lobby-host', 'lobby-join', 'lobby-active'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+            }
+
+            // --- OVERRIDE LOBBY MODAL ENTRY & NAVIGATION FUNCTIONS ---
+            window.openLobbyModalAt = function (mode) {
+                const modal = document.getElementById('welcome-modal');
+                if (modal) modal.style.display = 'flex';
+                if (mode === 'solo') window.startSolo();
+                else if (mode === 'host') window.showHostScreen();
+                else if (mode === 'join') window.showJoinScreen();
+                else window.returnToLobbyMain();
+            };
+
+            window.returnToLobbyMain = function () {
+                if (activeRoomCode && activeRoomCode !== 'SOLO') {
+                    coopRoomState.players = coopRoomState.players.filter(p => p.id !== myClientId);
+                    publishCoopRoom();
+                    coopMqtt.unsubscribe(`${COOP_TOPIC_BASE}/${activeRoomCode}`);
+                }
+                activeRoomCode = null;
+                isHostPlayer = false;
+                hideAllLobbyScreens();
+                document.getElementById('lobby-main').style.display = 'flex';
+            };
+
+            window.closeWelcomeModal = function () {
+                const modal = document.getElementById('welcome-modal');
+                if (modal) modal.style.display = 'none';
+            };
+
+            // SOLO FLOW
+            window.startSolo = function () {
+                hideAllLobbyScreens();
+                document.getElementById('lobby-solo').style.display = 'block';
+            };
+
+            window.confirmSoloDeployment = function () {
+                const name = document.getElementById('solo-player-name').value.trim();
+                const countryCode = document.getElementById('solo-player-country').value;
+                if (!name || !countryCode) {
+                    alert("⚠️ Please enter your Name and select your Country.");
+                    return;
+                }
+                const countryName = getCountryNameByCode(countryCode);
+                applyIdentityToMainDashboard(name, countryCode);
+
+                activeRoomCode = 'SOLO';
+                isHostPlayer = true;
+                coopRoomState = {
+                    roomCode: 'SOLO',
+                    players: [{ id: myClientId, name, countryCode, countryName, isHost: true }],
+                    ...captureCurrentBoardState(),
+                    launchTrigger: 0,
+                    anomalyChoice: null,
+                    lastAction: `Solo mission cleared for ${name} (${countryName}).`
+                };
+                renderCrewLists();
+                closeWelcomeModal();
+            };
+
+            // HOST TEAM FLOW
+            window.showHostScreen = function () {
+                if (!coopRelayOnline) {
+                    alert("Connecting to live multiplayer relay... Please try again in 2 seconds.");
+                    return;
+                }
+                hideAllLobbyScreens();
+                document.getElementById('lobby-host').style.display = 'block';
+
+                const code = Math.floor(1000 + Math.random() * 9000).toString();
+                activeRoomCode = code;
+                isHostPlayer = true;
+                document.getElementById('display-room-code').innerText = code;
+
+                const existingName = document.getElementById('host-player-name').value.trim() || 'Host Commander';
+                const existingCountry = document.getElementById('host-player-country').value || 'lk';
+                if (!document.getElementById('host-player-country').value) {
+                    document.getElementById('host-player-country').value = existingCountry;
+                }
+
+                coopRoomState = {
+                    roomCode: code,
+                    players: [{
+                        id: myClientId,
+                        name: existingName,
+                        countryCode: existingCountry,
+                        countryName: getCountryNameByCode(existingCountry),
+                        isHost: true
+                    }],
+                    ...captureCurrentBoardState(),
+                    launchTrigger: 0,
+                    anomalyChoice: null,
+                    lastAction: `Room ${code} hosted by ${existingName}.`
+                };
+
+                coopMqtt.subscribe(`${COOP_TOPIC_BASE}/${code}`);
+                publishCoopRoom();
+                renderCrewLists();
+            };
+
+            window.updateHostIdentityLive = function () {
+                if (!isHostPlayer || !activeRoomCode) return;
+                const name = document.getElementById('host-player-name').value.trim();
+                const countryCode = document.getElementById('host-player-country').value;
+                const me = coopRoomState.players.find(p => p.id === myClientId);
+                if (me && name && countryCode) {
+                    me.name = name;
+                    me.countryCode = countryCode;
+                    me.countryName = getCountryNameByCode(countryCode);
+                    coopRoomState.lastAction = `Host updated callsign to ${name} (${me.countryName}).`;
+                    applyIdentityToMainDashboard(name, countryCode);
+                    publishCoopRoom();
+                    renderCrewLists();
+                }
+            };
+
+            window.confirmHostDeployment = function () {
+                const name = document.getElementById('host-player-name').value.trim();
+                const countryCode = document.getElementById('host-player-country').value;
+                if (!name || !countryCode) {
+                    alert("⚠️ Please enter your Host Name and select your Country.");
+                    return;
+                }
+                updateHostIdentityLive();
+                closeWelcomeModal();
+            };
+
+            // JOIN TEAM FLOW
+            window.showJoinScreen = function () {
+                hideAllLobbyScreens();
+                document.getElementById('lobby-join').style.display = 'block';
+            };
+
+            window.fetchAvailableRolesForRoom = function () {
+                const code = document.getElementById('join-room-code').value.trim();
+                const statusEl = document.getElementById('join-room-status');
+                if (code.length < 4) {
+                    statusEl.innerText = 'Enter the 4-digit code given by your host to connect.';
+                    statusEl.style.color = '#8b949e';
+                    document.getElementById('join-crew-list').innerHTML = '';
+                    return;
+                }
+                statusEl.innerText = `Ready to connect to Room ${code}. Click CONNECT TO HANGAR below.`;
+                statusEl.style.color = '#3fb950';
+            };
+
+            window.joinMultiplayerRoom = function () {
+                const name = document.getElementById('join-player-name').value.trim();
+                const countryCode = document.getElementById('join-player-country').value;
+                const code = document.getElementById('join-room-code').value.trim();
+
+                if (!name || !countryCode) {
+                    alert("⚠️ Please enter your Name and select your Country.");
+                    return;
+                }
+                if (code.length !== 4) {
+                    alert("⚠️ Please enter the 4-digit Room Code provided by the host.");
+                    return;
+                }
+                if (!coopRelayOnline) {
+                    alert("Connecting to live multiplayer relay... Please try again in 2 seconds.");
+                    return;
+                }
+
+                const countryName = getCountryNameByCode(countryCode);
+                applyIdentityToMainDashboard(name, countryCode);
+
+                activeRoomCode = code;
+                isHostPlayer = false;
+                coopRoomState.roomCode = code;
+                coopRoomState.players = [{
+                    id: myClientId,
+                    name,
+                    countryCode,
+                    countryName,
+                    isHost: false
+                }];
+
+                document.getElementById('join-room-status').innerText = `Connecting to Room ${code}...`;
+                document.getElementById('join-room-status').style.color = '#58a6ff';
+
+                coopMqtt.subscribe(`${COOP_TOPIC_BASE}/${code}`, () => {
+                    // Show Active Lobby screen with live crew roster
+                    hideAllLobbyScreens();
+                    document.getElementById('lobby-active').style.display = 'block';
+                    document.getElementById('active-room-code').innerText = code;
+                    renderCrewLists();
+                });
+            };
+
+            // --- REAL-TIME STATE PUSH ON ANY CONTROL CHANGE ---
+            window.pushStateToNetwork = function () {
+                if (isApplyingRemote || !activeRoomCode || activeRoomCode === 'SOLO') return;
+                const me = coopRoomState.players.find(p => p.id === myClientId);
+                const snap = captureCurrentBoardState();
+                Object.assign(coopRoomState, snap);
+                coopRoomState.lastAction = `${me ? me.name : 'Crew'} updated mission parameters.`;
+                publishCoopRoom();
+                renderCrewLists();
+            };
+
+            // Wrap launch & mid-flight anomaly buttons so they sync across all connected devices
+            const originalHandleLaunchClick = window.handleLaunchClick;
+            window.handleLaunchClick = function () {
+                if (!isApplyingRemote && activeRoomCode && activeRoomCode !== 'SOLO') {
+                    const me = coopRoomState.players.find(p => p.id === myClientId);
+                    lastLaunchSignal = Date.now();
+                    coopRoomState.launchTrigger = lastLaunchSignal;
+                    coopRoomState.lastAction = `🚀 ${me ? me.name : 'Crew'} initiated launch sequence!`;
+                    publishCoopRoom();
+                }
+                if (typeof originalHandleLaunchClick === 'function') {
+                    originalHandleLaunchClick();
+                }
+            };
+
+            const originalHandleChallengeChoice = window.handleChallengeChoice;
+            window.handleChallengeChoice = function (choice) {
+                if (!isApplyingRemote && activeRoomCode && activeRoomCode !== 'SOLO') {
+                    const me = coopRoomState.players.find(p => p.id === myClientId);
+                    lastAnomalySignal = Date.now();
+                    coopRoomState.anomalyChoice = { id: lastAnomalySignal, choice: choice };
+                    coopRoomState.lastAction = `⚠️ ${me ? me.name : 'Crew'} executed anomaly protocol #${choice}!`;
+                    publishCoopRoom();
+                }
+                if (typeof originalHandleChallengeChoice === 'function') {
+                    originalHandleChallengeChoice(choice);
+                }
+            };
+
+            function escapeHtml(str) {
+                return String(str || '').replace(/[&<>"']/g, m => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[m]));
+            }
+
+            function escapeAttr(str) {
+                return String(str || '').replace(/[^a-zA-Z0-9_-]/g, '');
+            }
+        })();
+    </script>
 </body>
 </html>
