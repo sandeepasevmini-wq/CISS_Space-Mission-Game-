@@ -181,8 +181,7 @@ let selectedRoute = "Direct";
 let anomalyTriggered = false;
 let anomalyResolved = false;
 let currentActiveChallenge = null;
-
-let isFlightPaused = false; // Flag to halt transit during anomalies for Medium mode
+let isFlightPaused = false; // Flag to halt transit during anomalies for Commander (Medium) mode
 
 // High Score Persistence
 let highScore = localStorage.getItem('space_architect_highscore') || 0;
@@ -297,7 +296,8 @@ function showHostScreen() {
             comm: "HGA",
             instrument: "Camera",
             shield: 50,
-            launchTriggered: false
+            launchTriggered: false,
+            anomalyChoice: null
         }
     });
 }
@@ -426,7 +426,8 @@ function pushStateToNetwork() {
         comm: document.getElementById('comm-select') ? document.getElementById('comm-select').value : 'HGA',
         instrument: document.getElementById('instrument-select') ? document.getElementById('instrument-select').value : 'Camera',
         shield: document.getElementById('shield-slider') ? document.getElementById('shield-slider').value : '50',
-        launchTriggered: false
+        launchTriggered: false,
+        anomalyChoice: null
     };
 
     db.ref('rooms/' + currentRoomCode + '/state').set(statePayload);
@@ -460,6 +461,12 @@ function listenToRoomSync() {
         if (data.shield && document.getElementById('shield-slider')) document.getElementById('shield-slider').value = data.shield;
 
         updateSettings();
+
+        // Sync teammate's anomaly resolution choice during flight
+        if (data.anomalyChoice && anomalyTriggered && !anomalyResolved) {
+            handleChallengeChoice(data.anomalyChoice, true);
+        }
+
         isSyncingFromRemote = false;
 
         if (data.launchTriggered && !isMissionActive) {
@@ -470,7 +477,10 @@ function listenToRoomSync() {
 
 function handleLaunchClick() {
     if (currentRoomCode) {
-        db.ref('rooms/' + currentRoomCode + '/state/launchTriggered').set(true);
+        db.ref('rooms/' + currentRoomCode + '/state').update({
+            launchTriggered: true,
+            anomalyChoice: null
+        });
     }
     startMission();
 }
@@ -1047,6 +1057,7 @@ function selectTarget(name, element) {
     if (destinations[name]) {
         activeTarget = destinations[name];
         isMissionActive = false;
+        isFlightPaused = false;
         probeProgress = 0;
         
         if (element) {
@@ -1054,6 +1065,7 @@ function selectTarget(name, element) {
             element.classList.add('active');
         }
 
+        if (document.getElementById('anomaly-alert')) document.getElementById('anomaly-alert').classList.add('hidden');
         if (document.getElementById('target-display')) document.getElementById('target-display').innerText = "Selected Target: " + activeTarget.name + " | Distance: " + activeTarget.distAU + " AU";
         if (document.getElementById('debrief-text')) document.getElementById('debrief-text').innerText = "Target changed to " + name + ". Design systems to achieve: " + activeTarget.goal;
         if (document.getElementById('score-display')) document.getElementById('score-display').classList.add('hidden');
@@ -1076,6 +1088,7 @@ function startMission() {
 
     probeProgress = 0;
     isMissionActive = true;
+    isFlightPaused = false;
     anomalyTriggered = false;
     anomalyResolved = false;
     if (document.getElementById('anomaly-alert')) document.getElementById('anomaly-alert').classList.add('hidden');
@@ -1160,8 +1173,8 @@ function drawProceduralSpacecraft(ctx, x, y) {
         ctx.stroke();
     }
 
-    // 4. Engine Exhaust Plume during flight
-    if (isMissionActive) {
+    // 4. Engine Exhaust Plume during flight (cut off while flight is paused)
+    if (isMissionActive && !isFlightPaused) {
         ctx.fillStyle = '#38bdf8';
         ctx.beginPath();
         ctx.moveTo(-4, 8);
@@ -1473,7 +1486,7 @@ function triggerRandomChallenge() {
     }
 }
 
-function handleChallengeChoice(choiceNumber) {
+function handleChallengeChoice(choiceNumber, fromRemote = false) {
     if (document.getElementById('anomaly-alert')) {
         document.getElementById('anomaly-alert').classList.add('hidden');
     }
@@ -1486,7 +1499,20 @@ function handleChallengeChoice(choiceNumber) {
         currentShielding -= 10;
         missionStatus = "CHALLENGE RESOLVED: Alternate Route Taken (Minor Penalty)";
     }
+
     anomalyResolved = true;
+    isFlightPaused = false; // Resume transit once solution is selected
+
+    const dashBadge = document.getElementById('dash-status-badge');
+    if (dashBadge && isMissionActive) {
+        dashBadge.innerText = "IN TRANSIT";
+        dashBadge.style.background = "#1f6feb";
+    }
+
+    // Sync resolution to teammates in multiplayer mode
+    if (currentRoomCode && !fromRemote) {
+        db.ref('rooms/' + currentRoomCode + '/state/anomalyChoice').set(choiceNumber);
+    }
 }
 
 const canvas = document.getElementById('spaceCanvas');
@@ -1562,9 +1588,31 @@ function drawSpace() {
             dashShield.style.color = currentShielding < activeTarget.reqShielding ? '#f0883e' : '#e6edf3';
         }
 
+        // Difficulty-based mid-flight anomaly handling
         if (probeProgress > 0.45 && probeProgress < 0.50 && !anomalyTriggered && !anomalyResolved) {
-            anomalyTriggered = true;
-            triggerRandomChallenge();
+            const diffSelect = document.getElementById('difficulty-select');
+            const currentDiff = diffSelect ? diffSelect.value : "Commander";
+
+            if (currentDiff === "Cadet") {
+                // CADET MODE: Skip anomalies completely
+                anomalyResolved = true;
+            } else {
+                anomalyTriggered = true;
+                triggerRandomChallenge();
+
+                if (currentDiff === "Commander") {
+                    // COMMANDER (MEDIUM) MODE: Pause flight until anomaly is resolved
+                    isFlightPaused = true;
+                    missionStatus = "TRANSIT HALTED: Awaiting Anomaly Resolution";
+
+                    const dashBadge = document.getElementById('dash-status-badge');
+                    if (dashBadge) {
+                        dashBadge.innerText = "ANOMALY PAUSE";
+                        dashBadge.style.background = "#d29922";
+                    }
+                }
+                // ARCHITECT (DIFFICULT) MODE: Continues moving without pausing
+            }
         }
 
         if (probeProgress > 0.5 && !anomalyTriggered) {
@@ -1577,7 +1625,10 @@ function drawSpace() {
             }
         }
 
-        probeProgress += speed;
+        // Only advance transit progress if flight is not paused
+        if (!isFlightPaused) {
+            probeProgress += speed;
+        }
 
         if (probeProgress >= 1) {
             probeProgress = 1;
@@ -1627,6 +1678,11 @@ function playCutscene(videoSrc, isSuccess, titleText, subText) {
 
 function evaluateMission() {
     isMissionActive = false;
+    isFlightPaused = false;
+    if (document.getElementById('anomaly-alert')) {
+        document.getElementById('anomaly-alert').classList.add('hidden');
+    }
+
     const debrief = document.getElementById('debrief-text');
     let finalScore = 0;
     let grade = 'F';
@@ -1679,6 +1735,12 @@ function evaluateMission() {
 
         const budgetBonus = (totalBudget - totalCost);
         finalScore = Math.round((sciencePoints * 10 * dataEfficiency) + budgetBonus);
+
+        // Penalty if an anomaly was ignored during Architect (Difficult) mode
+        if (anomalyTriggered && !anomalyResolved) {
+            finalScore = Math.max(0, finalScore - 200);
+            bottleneckWarning += " (⚠️ Unresolved Transit Anomaly: -200 PTS)";
+        }
 
         if (gameMode === "team") {
             teamObjectivesMet = 0;
@@ -1852,7 +1914,7 @@ function runGameLoader() {
             audioLoader.pause();
             audioLoader.currentTime = 0;
 
-setTimeout(() => {
+            setTimeout(() => {
                 if (loaderScreen) {
                     loaderScreen.style.opacity = '0';
                     loaderScreen.style.visibility = 'hidden';
@@ -1980,7 +2042,10 @@ function renderMissionViz() {
     if (hudTarget) hudTarget.innerText = `TARGET: ${activeTarget.name}`;
     if (hudDist) hudDist.innerText = `SEPARATION DISTANCE: ${activeTarget.distAU} AU`;
 
-    vizOrbitAngle += 0.005;
+    // Pause target orbital motion while flight is halted for an anomaly
+    if (!isFlightPaused) {
+        vizOrbitAngle += 0.005;
+    }
 
     requestAnimationFrame(renderMissionViz);
 }
