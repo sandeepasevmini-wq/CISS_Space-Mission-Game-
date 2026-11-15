@@ -11,7 +11,9 @@
         body {
             background-color: #020408;
             color: #e6edf3;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            letter-spacing: 0.3px;
+            line-height: 1.6;
             margin: 0;
             padding: 0;
         }
@@ -36,13 +38,14 @@
         .header-title h1 {
             margin: 0;
             color: #3fb950;
+            font-family: 'Courier New', Courier, monospace;
             font-size: 1.45rem;
             letter-spacing: 1px;
         }
         .header-title p {
             margin: 4px 0 0 0;
             color: #8b949e;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
         .back-btn {
             background: #21262d;
@@ -54,6 +57,7 @@
             font-weight: bold;
             font-size: 0.85rem;
             transition: all 0.2s ease;
+            font-family: inherit;
         }
         .back-btn:hover {
             border-color: #3fb950;
@@ -91,9 +95,10 @@
             color: #3fb950;
             font-size: 0.85rem;
             margin-bottom: 4px;
+            font-family: 'Courier New', Courier, monospace;
         }
         .lab-btn span {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: #8b949e;
         }
         .sandbox-grid {
@@ -113,7 +118,9 @@
         }
         .panel h2 {
             margin-top: 0;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 0.5px;
             color: #3fb950;
             border-bottom: 1px solid #21262d;
             padding-bottom: 8px;
@@ -124,13 +131,15 @@
         .control-row label {
             display: flex;
             justify-content: space-between;
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             color: #c9d1d9;
             margin-bottom: 5px;
+            font-weight: 500;
         }
         .control-row label span {
             color: #58a6ff;
             font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
         }
         .control-row input[type="range"], .control-row select, .control-row input[type="number"] {
             width: 100%;
@@ -140,7 +149,7 @@
             padding: 7px;
             border-radius: 4px;
             font-family: inherit;
-            font-size: 0.82rem;
+            font-size: 0.88rem;
         }
         .telemetry-grid {
             display: grid;
@@ -156,13 +165,15 @@
         }
         .telem-card small {
             display: block;
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             color: #8b949e;
             margin-bottom: 3px;
+            font-family: 'Courier New', Courier, monospace;
         }
         .telem-card strong {
             font-size: 0.95rem;
             color: #e6edf3;
+            font-family: 'Courier New', Courier, monospace;
         }
         #sandboxCanvas {
             width: 100%;
@@ -178,8 +189,8 @@
             border: 1px solid #30363d;
             border-radius: 6px;
             padding: 12px;
-            font-size: 0.8rem;
-            line-height: 1.5;
+            font-size: 0.85rem;
+            line-height: 1.6;
             color: #c9d1d9;
         }
     </style>
@@ -189,12 +200,11 @@
 
     <header>
         <div class="header-title">
-            <span style="font-size: 0.72rem; color: #3fb950; letter-spacing: 1.5px;">UNRESTRICTED LAB // MODULE 03</span>
+            <span style="font-size: 0.72rem; color: #3fb950; letter-spacing: 1.5px; font-family: 'Courier New', Courier, monospace;">UNRESTRICTED LAB // MODULE 03</span>
             <h1>PHYSICS &amp; SYSTEMS SANDBOX</h1>
             <p>Experiment without budget or mass limits, customize planetary physics, and run guided labs.</p>
         </div>
-        <!-- In sandbox.html -->
-<a href="index.html?skipLoader=true" class="back-btn">&larr; RETURN TO MAIN ARCHITECT</a>
+        <a href="index.html?skipLoader=true" class="back-btn">&larr; RETURN TO MAIN ARCHITECT</a>
     </header>
 
     <div class="container">
@@ -223,7 +233,7 @@
             <div>
                 <div class="panel">
                     <h2>01. UNRESTRICTED SPACECRAFT BUILDER</h2>
-                    <p style="font-size:0.75rem; color:#3fb950; margin-top:-4px;">[BUDGET &amp; MASS CAPS DISABLED]</p>
+                    <p style="font-size:0.78rem; color:#3fb950; margin-top:-4px; font-family: 'Courier New', Courier, monospace;">[BUDGET &amp; MASS CAPS DISABLED]</p>
 
                     <div class="control-row">
                         <label>POWER GENERATOR:</label>
@@ -343,26 +353,26 @@
                 <!-- GMAT-Inspired Astrodynamics & Trade-Off Extension Panel -->
                 <div class="panel">
                     <h2 style="color: #58a6ff;">04. GMAT OPTIMIZATION TRADE-STUDY</h2>
-                    <div style="font-size: 0.8rem; color: #8b949e; margin-bottom: 10px;">
+                    <div style="font-size: 0.85rem; color: #8b949e; margin-bottom: 10px;">
                         Enterprise-level orbital trade optimization modeled on NASA GMAT architecture principles.
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
                         <div>
-                            <label style="font-size: 0.75rem; color: #c9d1d9; display: block; margin-bottom: 4px;">Target Transfer Delta-V Requirement (m/s):</label>
+                            <label style="font-size: 0.8rem; color: #c9d1d9; display: block; margin-bottom: 4px; font-weight: 500;">Target Transfer Delta-V Requirement (m/s):</label>
                             <input type="number" id="gmatTargetDv" value="5200" style="background: #161b22; border: 1px solid #30363d; color: #e6edf3; padding: 6px; border-radius: 4px; font-family: monospace; width: 100%;">
                         </div>
                         
-                        <button onclick="runGmatOptimization()" style="background: #238636; color: white; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: monospace; font-size: 0.85rem; width: 100%; margin-top: 4px;">
+                        <button onclick="runGmatOptimization()" style="background: #238636; color: white; border: none; padding: 9px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: inherit; font-size: 0.9rem; width: 100%; margin-top: 4px;">
                             Run GMAT Optimization Trade-Study
                         </button>
                     </div>
 
-                    <div style="background: #161b22; padding: 10px; border-radius: 6px; border: 1px solid #30363d; font-size: 0.78rem; line-height: 1.5; margin-top: 12px;">
-                        <div style="color: #58a6ff; font-weight: bold; margin-bottom: 4px;">TRADE-OFF METRICS:</div>
-                        <div>Initial Wet Mass ($m_0$): <span id="gmatOutMass" style="color: #c9d1d9;">--</span></div>
-                        <div>Mass Ratio ($m_0 / m_f$): <span id="gmatOutRatio" style="color: #c9d1d9;">--</span></div>
-                        <div>Feasibility Status: <span id="gmatOutFeas" style="color: #f0a500; font-weight: bold;">Awaiting Simulation</span></div>
+                    <div style="background: #161b22; padding: 12px; border-radius: 6px; border: 1px solid #30363d; font-size: 0.82rem; line-height: 1.6; margin-top: 12px;">
+                        <div style="color: #58a6ff; font-weight: bold; margin-bottom: 4px; font-family: 'Courier New', Courier, monospace;">TRADE-OFF METRICS:</div>
+                        <div>Initial Wet Mass ($m_0$): <span id="gmatOutMass" style="color: #c9d1d9; font-family: monospace;">--</span></div>
+                        <div>Mass Ratio ($m_0 / m_f$): <span id="gmatOutRatio" style="color: #c9d1d9; font-family: monospace;">--</span></div>
+                        <div>Feasibility Status: <span id="gmatOutFeas" style="color: #f0a500; font-weight: bold; font-family: monospace;">Awaiting Simulation</span></div>
                     </div>
                 </div>
             </div>
