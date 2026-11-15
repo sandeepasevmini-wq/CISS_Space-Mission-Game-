@@ -6,9 +6,8 @@
     <title>Competitive Scenarios // Module 02 - CISS</title>
     <link rel="icon" type="image/png" href="CISS.png">
 
-    <!-- FIREBASE MULTIPLAYER ENGINES (v8 Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- LIVE CROSS-DEVICE WEBSOCKET MULTIPLAYER ENGINE -->
+    <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -62,7 +61,6 @@
             font-weight: bold;
             font-size: 0.85rem;
             transition: all 0.2s ease;
-            font-family: inherit;
         }
         .back-btn:hover {
             border-color: #58a6ff;
@@ -88,6 +86,112 @@
             color: #58a6ff;
             border-bottom: 1px solid #21262d;
             padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .relay-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #21262d;
+            color: #d29922;
+        }
+        .relay-badge.online {
+            background: rgba(35, 134, 54, 0.2);
+            color: #3fb950;
+            border: 1px solid rgba(63, 185, 80, 0.4);
+        }
+        .identity-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #21262d;
+        }
+        .id-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .id-field label {
+            font-size: 0.75rem;
+            color: #8b949e;
+            font-weight: 600;
+        }
+        .id-field input, .id-field select {
+            background: #161b22;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+            padding: 8px 10px;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 0.88rem;
+            min-width: 190px;
+        }
+        .sync-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            font-size: 0.88rem;
+        }
+        .sync-bar input {
+            background: #161b22;
+            border: 1px solid #30363d;
+            color: white;
+            padding: 8px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            width: 130px;
+            font-weight: bold;
+        }
+        .roster-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 14px;
+        }
+        @media (max-width: 700px) {
+            .roster-grid { grid-template-columns: 1fr; }
+        }
+        .roster-slot {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+        .roster-slot.logged-in {
+            border-color: #2ea043;
+            background: rgba(46, 160, 67, 0.08);
+        }
+        .lobby-browser {
+            margin-top: 14px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 14px;
+            display: none;
+        }
+        .lobby-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-top: 8px;
         }
         .contract-grid {
             display: grid;
@@ -108,6 +212,10 @@
             box-shadow: 0 0 14px rgba(88, 166, 255, 0.2);
             background: #1c2430;
         }
+        .contract-card.locked {
+            cursor: not-allowed;
+            opacity: 0.85;
+        }
         .contract-card h3 {
             margin: 0 0 6px 0;
             font-size: 0.9rem;
@@ -127,6 +235,7 @@
             .teams-grid { grid-template-columns: 1fr; }
         }
         .team-deck {
+            position: relative;
             background: rgba(13, 17, 23, 0.95);
             border: 1px solid #30363d;
             border-top: 4px solid #58a6ff;
@@ -140,9 +249,26 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
             margin-bottom: 14px;
             border-bottom: 1px solid #21262d;
-            padding-bottom: 8px;
+            padding-bottom: 10px;
+        }
+        .team-title-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        .team-tag {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 0.82rem;
+            color: #58a6ff;
+            white-space: nowrap;
+        }
+        .team-deck.omega .team-tag {
+            color: #f0883e;
         }
         .team-header input {
             background: #0d1117;
@@ -150,22 +276,28 @@
             color: #e6edf3;
             font-family: inherit;
             font-weight: bold;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             padding: 6px 10px;
             border-radius: 4px;
-            width: 65%;
+            width: 100%;
         }
         .status-pill {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             padding: 4px 8px;
             border-radius: 4px;
             font-weight: bold;
+            background: #d29922;
+            color: #0d1117;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: nowrap;
+        }
+        .status-pill.ready {
             background: #238636;
             color: white;
-            font-family: 'Courier New', Courier, monospace;
         }
         .status-pill.invalid {
             background: #da3633;
+            color: white;
         }
         .field-group {
             margin-bottom: 12px;
@@ -185,7 +317,36 @@
             padding: 8px;
             border-radius: 4px;
             font-family: inherit;
-            font-size: 0.88rem;
+            font-size: 0.86rem;
+        }
+        .field-group select:disabled, .field-group input:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .classified-veil {
+            position: absolute;
+            inset: 62px 14px 14px 14px;
+            background: rgba(13, 17, 23, 0.96);
+            border: 1px dashed #30363d;
+            border-radius: 6px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            z-index: 5;
+        }
+        .classified-veil h4 {
+            margin: 0 0 8px 0;
+            color: #58a6ff;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .classified-veil p {
+            margin: 0;
+            font-size: 0.84rem;
+            color: #8b949e;
+            max-width: 320px;
         }
         .metrics-bar {
             display: grid;
@@ -202,7 +363,7 @@
         }
         .metrics-bar strong {
             display: block;
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             margin-top: 2px;
             color: #58a6ff;
         }
@@ -226,7 +387,13 @@
             cursor: pointer;
             letter-spacing: 0.5px;
         }
-        .btn-primary:hover { background: #2ea043; }
+        .btn-primary:hover:not(:disabled) { background: #2ea043; }
+        .btn-primary:disabled {
+            background: #21262d;
+            border-color: #30363d;
+            color: #8b949e;
+            cursor: not-allowed;
+        }
         .btn-secondary {
             background: #1f6feb;
             border: 1px solid #388bfd;
@@ -238,6 +405,7 @@
             font-size: 0.82rem;
             cursor: pointer;
         }
+        .btn-secondary:hover { background: #388bfd; }
         #raceCanvas {
             width: 100%;
             height: 260px;
@@ -255,22 +423,6 @@
             display: none;
             line-height: 1.6;
         }
-        .sync-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            font-size: 0.88rem;
-        }
-        .sync-bar input {
-            background: #161b22;
-            border: 1px solid #30363d;
-            color: white;
-            padding: 7px 10px;
-            border-radius: 4px;
-            font-family: inherit;
-            width: 130px;
-        }
     </style>
 </head>
 <body>
@@ -286,23 +438,80 @@
     </header>
 
     <div class="container">
-        <!-- OPTIONAL ONLINE ROOM SYNC -->
+        <!-- 01. LIVE MULTIPLAYER MATCHMAKING & LOBBY -->
         <div class="panel">
-            <h2>01. NETWORK MODE (LOCAL HEAD-TO-HEAD OR LIVE FIREBASE ROOM)</h2>
+            <h2>
+                <span>01. MULTIPLAYER DUEL LOBBY &amp; MATCHMAKING</span>
+                <span id="relay-status" class="relay-badge">🟡 CONNECTING TO LIVE RELAY...</span>
+            </h2>
+
+            <!-- PLAYER PROFILE SETUP (NAME & COUNTRY) -->
+            <div class="identity-bar">
+                <div class="id-field">
+                    <label for="player-name-input">YOUR COMMANDER / AGENCY NAME *</label>
+                    <input type="text" id="player-name-input" placeholder="e.g. Sandeepa // CISS" oninput="onProfileEdit()">
+                </div>
+                <div class="id-field">
+                    <label for="player-country-input">COUNTRY *</label>
+                    <select id="player-country-input" onchange="onProfileEdit()">
+                        <option value="" disabled selected>-- Select Country --</option>
+                        <option value="Sri Lanka">🇱🇰 Sri Lanka</option>
+                        <option value="United States">🇺🇸 United States</option>
+                        <option value="United Kingdom">🇬🇧 United Kingdom</option>
+                        <option value="India">🇮🇳 India</option>
+                        <option value="Japan">🇯🇵 Japan</option>
+                        <option value="Germany">🇩🇪 Germany</option>
+                        <option value="France">🇫🇷 France</option>
+                        <option value="Switzerland">🇨🇭 Switzerland</option>
+                        <option value="Canada">🇨🇦 Canada</option>
+                        <option value="Australia">🇦🇺 Australia</option>
+                        <option value="Singapore">🇸🇬 Singapore</option>
+                        <option value="United Arab Emirates">🇦🇪 United Arab Emirates</option>
+                        <option value="South Korea">🇰🇷 South Korea</option>
+                        <option value="Brazil">🇧🇷 Brazil</option>
+                        <option value="International">🌍 International</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- HOST / SEARCH FOR A TEAM / JOIN BY CODE -->
             <div class="sync-bar">
-                <span>Play locally side-by-side OR sync two browsers via Room Code:</span>
-                <button class="btn-secondary" onclick="createCompetitiveRoom()">📡 HOST RACE ROOM</button>
-                <input type="text" id="comp-room-input" placeholder="4-Digit Code">
-                <button class="btn-secondary" style="background:#2ea043; border-color:#238636;" onclick="joinCompetitiveRoom()">🚀 JOIN ROOM</button>
-                <span id="comp-room-status" style="color: #a5d6ff; font-weight: bold; font-family: 'Courier New', Courier, monospace;">MODE: LOCAL DUAL-DECK</span>
+                <button class="btn-secondary" onclick="hostCompetitiveDuel()">📡 HOST DUEL ROOM</button>
+                <button class="btn-secondary" style="background:#8957e5; border-color:#a371f7;" onclick="searchForTeams()">🔍 SEARCH FOR A TEAM</button>
+                <input type="text" id="comp-room-input" maxlength="4" placeholder="4-Digit Code">
+                <button class="btn-secondary" style="background:#2ea043; border-color:#238636;" onclick="joinByCode()">🚀 JOIN BY CODE</button>
+                <span id="comp-room-status" style="color: #a5d6ff; font-weight: bold; font-family: 'Courier New', Courier, monospace;">MODE: NOT CONNECTED</span>
+            </div>
+
+            <!-- OPEN TEAMS MATCHMAKING BROWSER -->
+            <div id="lobby-browser" class="lobby-browser">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color:#a371f7; font-family:'Courier New', Courier, monospace; font-size:0.88rem;">📡 LIVE OPEN RIVAL TEAMS AVAILABLE FOR DUEL:</strong>
+                    <button class="btn-secondary" style="padding:4px 10px; font-size:0.75rem;" onclick="searchForTeams()">↻ REFRESH</button>
+                </div>
+                <div id="lobby-list" style="margin-top:8px; font-size:0.84rem; color:#8b949e;">
+                    Scanning network for hosted teams...
+                </div>
+            </div>
+
+            <!-- LOGGED-IN PLAYERS ROSTER -->
+            <div class="roster-grid">
+                <div id="roster-team1" class="roster-slot">
+                    <span><strong>TEAM 1 (HOST):</strong> <span id="roster-t1-text" style="color:#8b949e;">Waiting for host...</span></span>
+                    <span id="roster-t1-badge" style="font-size:0.75rem; color:#8b949e;">OFFLINE</span>
+                </div>
+                <div id="roster-team2" class="roster-slot">
+                    <span><strong>TEAM 2 (RIVAL):</strong> <span id="roster-t2-text" style="color:#8b949e;">Waiting for challenger...</span></span>
+                    <span id="roster-t2-badge" style="font-size:0.75rem; color:#8b949e;">OFFLINE</span>
+                </div>
             </div>
         </div>
 
-        <!-- SHARED CONTRACT SELECTION -->
+        <!-- 02. SHARED CONTRACT SELECTION -->
         <div class="panel">
-            <h2>02. SELECT SHARED AGENCY CONTRACT</h2>
+            <h2>02. SELECT SHARED AGENCY CONTRACT <span id="contract-lock-note" style="font-size:0.75rem; color:#8b949e; font-weight:normal;"></span></h2>
             <div class="contract-grid" id="contract-grid">
-                <div class="contract-card active" onclick="selectContract('europa_relay', this)">
+                <div class="contract-card active" id="card-europa_relay" onclick="selectContract('europa_relay')">
                     <h3>CONTRACT A: EUROPA CRYOBOT RELAY</h3>
                     <div class="contract-specs">
                         Target: <strong>Europa (5.2 AU)</strong> | Budget Cap: <strong>$950M</strong><br>
@@ -310,7 +519,7 @@
                         Min Shielding: <strong>80%</strong> | Min Comms: <strong>500 kbps</strong>
                     </div>
                 </div>
-                <div class="contract-card" onclick="selectContract('titan_skimmer', this)">
+                <div class="contract-card" id="card-titan_skimmer" onclick="selectContract('titan_skimmer')">
                     <h3>CONTRACT B: TITAN METHANE SKIMMER</h3>
                     <div class="contract-specs">
                         Target: <strong>Titan (9.5 AU)</strong> | Budget Cap: <strong>$1,100M</strong><br>
@@ -318,7 +527,7 @@
                         Min Shielding: <strong>40%</strong> | Min Comms: <strong>100 kbps</strong>
                     </div>
                 </div>
-                <div class="contract-card" onclick="selectContract('psyche_express', this)">
+                <div class="contract-card" id="card-psyche_express" onclick="selectContract('psyche_express')">
                     <h3>CONTRACT C: 16 PSYCHE CORE EXPRESS</h3>
                     <div class="contract-specs">
                         Target: <strong>16 Psyche (3.0 AU)</strong> | Budget Cap: <strong>$750M</strong><br>
@@ -329,129 +538,157 @@
             </div>
         </div>
 
-        <!-- RIVAL SPACECRAFT ARCHITECTURES -->
+        <!-- 03. RIVAL SPACECRAFT ARCHITECTURES -->
         <div class="teams-grid">
-            <!-- TEAM ALPHA -->
-            <div class="team-deck">
+            <!-- TEAM 1 (HOST) -->
+            <div class="team-deck" id="deck-alpha">
                 <div class="team-header">
-                    <input type="text" id="alpha-name" value="TEAM ALPHA // VANGUARD" oninput="syncTeamsToFirebase()">
-                    <span id="alpha-badge" class="status-pill">CONTRACT READY</span>
+                    <div class="team-title-box">
+                        <span class="team-tag">TEAM 1:</span>
+                        <input type="text" id="alpha-name" value="Awaiting Host Name..." readonly>
+                    </div>
+                    <span id="alpha-badge" class="status-pill">CONTRACT NOT READY</span>
+                </div>
+
+                <!-- CLASSIFIED OVERLAY SHOWN TO TEAM 2 UNTIL BOTH CONTRACTS ARE READY -->
+                <div id="veil-alpha" class="classified-veil">
+                    <h4>🔒 TEAM 1 DESIGN CLASSIFIED</h4>
+                    <p id="veil-alpha-msg">Team 1 is currently selecting their spacecraft subsystems. Their architecture will be revealed here once both teams reach CONTRACT READY.</p>
                 </div>
 
                 <div class="field-group">
                     <label>LAUNCH VEHICLE:</label>
-                    <select id="alpha-launcher" onchange="recalcTeams()">
+                    <select id="alpha-launcher" onchange="onTeamInput('alpha')">
+                        <option value="" disabled selected>-- Select Launch Vehicle --</option>
                         <option value="FalconHeavy">Falcon Heavy ($150M | Max 1500kg)</option>
                         <option value="SLS">Space Launch System ($800M | Max 3000kg)</option>
                     </select>
                 </div>
                 <div class="field-group">
                     <label>POWER GENERATOR:</label>
-                    <select id="alpha-power" onchange="recalcTeams()">
+                    <select id="alpha-power" onchange="onTeamInput('alpha')">
+                        <option value="" disabled selected>-- Select Power Generator --</option>
                         <option value="Solar">Solar Arrays ($50M | 200kg | 200W)</option>
-                        <option value="RTG" selected>Nuclear RTG ($200M | 150kg | 600W)</option>
+                        <option value="RTG">Nuclear RTG ($200M | 150kg | 600W)</option>
                     </select>
                 </div>
                 <div class="field-group">
                     <label>COMMUNICATIONS:</label>
-                    <select id="alpha-comm" onchange="recalcTeams()">
+                    <select id="alpha-comm" onchange="onTeamInput('alpha')">
+                        <option value="" disabled selected>-- Select Comms System --</option>
                         <option value="LGA">Low-Gain Antenna ($20M | 50kg | 10 kbps)</option>
-                        <option value="HGA" selected>High-Gain Dish ($80M | 120kg | 500 kbps)</option>
+                        <option value="HGA">High-Gain Dish ($80M | 120kg | 500 kbps)</option>
                         <option value="Laser">Laser Comms ($180M | 80kg | 5000 kbps)</option>
                     </select>
                 </div>
                 <div class="field-group">
                     <label>SCIENTIFIC PAYLOAD:</label>
-                    <select id="alpha-inst" onchange="recalcTeams()">
+                    <select id="alpha-inst" onchange="onTeamInput('alpha')">
+                        <option value="" disabled selected>-- Select Scientific Payload --</option>
                         <option value="Camera">Optical Camera ($40M | 60kg | 50 Sci)</option>
-                        <option value="Radar" selected>Ice-Penetrating Radar ($150M | 220kg | 120 Sci)</option>
+                        <option value="Radar">Ice-Penetrating Radar ($150M | 220kg | 120 Sci)</option>
                         <option value="Spectrometer">Mass Spectrometer ($110M | 100kg | 90 Sci)</option>
                     </select>
                 </div>
                 <div class="field-group">
                     <label>TRAJECTORY PROFILE:</label>
-                    <select id="alpha-route" onchange="recalcTeams()">
-                        <option value="Direct" selected>Direct Burn (Fast Transit | Standard Cost)</option>
+                    <select id="alpha-route" onchange="onTeamInput('alpha')">
+                        <option value="" disabled selected>-- Select Trajectory Profile --</option>
+                        <option value="Direct">Direct Burn (Fast Transit | Standard Cost)</option>
                         <option value="GravityAssist">Gravity Assist (Slower Transit | -$50M Discount)</option>
                     </select>
                 </div>
                 <div class="field-group">
-                    <label>RADIATION SHIELDING: <span id="alpha-shield-val">80</span>%</label>
-                    <input type="range" id="alpha-shield" min="10" max="100" value="80" oninput="recalcTeams()">
+                    <label>RADIATION SHIELDING: <span id="alpha-shield-val">Not Set (Move Slider)</span></label>
+                    <input type="range" id="alpha-shield" min="10" max="100" value="10" oninput="onShieldMove('alpha')">
                 </div>
 
                 <div class="metrics-bar">
-                    <div>COST<strong id="alpha-cost">$0M</strong></div>
-                    <div>MASS<strong id="alpha-mass">0 kg</strong></div>
-                    <div>POWER<strong id="alpha-pwr">0W</strong></div>
-                    <div>COMMS<strong id="alpha-kbps">0 kbps</strong></div>
+                    <div>COST<strong id="alpha-cost">--</strong></div>
+                    <div>MASS<strong id="alpha-mass">--</strong></div>
+                    <div>POWER<strong id="alpha-pwr">--</strong></div>
+                    <div>COMMS<strong id="alpha-kbps">--</strong></div>
                 </div>
             </div>
 
-            <!-- TEAM OMEGA -->
-            <div class="team-deck omega">
+            <!-- TEAM 2 (CHALLENGER) -->
+            <div class="team-deck omega" id="deck-omega">
                 <div class="team-header">
-                    <input type="text" id="omega-name" value="TEAM OMEGA // HYPERION" oninput="syncTeamsToFirebase()">
-                    <span id="omega-badge" class="status-pill">CONTRACT READY</span>
+                    <div class="team-title-box">
+                        <span class="team-tag">TEAM 2:</span>
+                        <input type="text" id="omega-name" value="Awaiting Team 2..." readonly>
+                    </div>
+                    <span id="omega-badge" class="status-pill">CONTRACT NOT READY</span>
+                </div>
+
+                <!-- CLASSIFIED OVERLAY SHOWN TO TEAM 1 UNTIL BOTH CONTRACTS ARE READY -->
+                <div id="veil-omega" class="classified-veil">
+                    <h4>🔒 TEAM 2 DESIGN CLASSIFIED</h4>
+                    <p id="veil-omega-msg">Team 2 is currently selecting their spacecraft subsystems. Their architecture will be revealed here once both teams reach CONTRACT READY.</p>
                 </div>
 
                 <div class="field-group">
                     <label>LAUNCH VEHICLE:</label>
-                    <select id="omega-launcher" onchange="recalcTeams()">
-                        <option value="FalconHeavy" selected>Falcon Heavy ($150M | Max 1500kg)</option>
+                    <select id="omega-launcher" onchange="onTeamInput('omega')">
+                        <option value="" disabled selected>-- Select Launch Vehicle --</option>
+                        <option value="FalconHeavy">Falcon Heavy ($150M | Max 1500kg)</option>
                         <option value="SLS">Space Launch System ($800M | Max 3000kg)</option>
                     </select>
                 </div>
                 <div class="field-group">
                     <label>POWER GENERATOR:</label>
-                    <select id="omega-power" onchange="recalcTeams()">
+                    <select id="omega-power" onchange="onTeamInput('omega')">
+                        <option value="" disabled selected>-- Select Power Generator --</option>
                         <option value="Solar">Solar Arrays ($50M | 200kg | 200W)</option>
-                        <option value="RTG" selected>Nuclear RTG ($200M | 150kg | 600W)</option>
+                        <option value="RTG">Nuclear RTG ($200M | 150kg | 600W)</option>
                     </select>
                 </div>
                 <div class="field-group">
                     <label>COMMUNICATIONS:</label>
-                    <select id="omega-comm" onchange="recalcTeams()">
+                    <select id="omega-comm" onchange="onTeamInput('omega')">
+                        <option value="" disabled selected>-- Select Comms System --</option>
                         <option value="LGA">Low-Gain Antenna ($20M | 50kg | 10 kbps)</option>
                         <option value="HGA">High-Gain Dish ($80M | 120kg | 500 kbps)</option>
-                        <option value="Laser" selected>Laser Comms ($180M | 80kg | 5000 kbps)</option>
+                        <option value="Laser">Laser Comms ($180M | 80kg | 5000 kbps)</option>
                     </select>
                 </div>
                 <div class="field-group">
                     <label>SCIENTIFIC PAYLOAD:</label>
-                    <select id="omega-inst" onchange="recalcTeams()">
+                    <select id="omega-inst" onchange="onTeamInput('omega')">
+                        <option value="" disabled selected>-- Select Scientific Payload --</option>
                         <option value="Camera">Optical Camera ($40M | 60kg | 50 Sci)</option>
                         <option value="Radar">Ice-Penetrating Radar ($150M | 220kg | 120 Sci)</option>
-                        <option value="Spectrometer" selected>Mass Spectrometer ($110M | 100kg | 90 Sci)</option>
+                        <option value="Spectrometer">Mass Spectrometer ($110M | 100kg | 90 Sci)</option>
                     </select>
                 </div>
                 <div class="field-group">
                     <label>TRAJECTORY PROFILE:</label>
-                    <select id="omega-route" onchange="recalcTeams()">
+                    <select id="omega-route" onchange="onTeamInput('omega')">
+                        <option value="" disabled selected>-- Select Trajectory Profile --</option>
                         <option value="Direct">Direct Burn (Fast Transit | Standard Cost)</option>
-                        <option value="GravityAssist" selected>Gravity Assist (Slower Transit | -$50M Discount)</option>
+                        <option value="GravityAssist">Gravity Assist (Slower Transit | -$50M Discount)</option>
                     </select>
                 </div>
                 <div class="field-group">
-                    <label>RADIATION SHIELDING: <span id="omega-shield-val">85</span>%</label>
-                    <input type="range" id="omega-shield" min="10" max="100" value="85" oninput="recalcTeams()">
+                    <label>RADIATION SHIELDING: <span id="omega-shield-val">Not Set (Move Slider)</span></label>
+                    <input type="range" id="omega-shield" min="10" max="100" value="10" oninput="onShieldMove('omega')">
                 </div>
 
                 <div class="metrics-bar">
-                    <div>COST<strong id="omega-cost" style="color:#f0883e;">$0M</strong></div>
-                    <div>MASS<strong id="omega-mass" style="color:#f0883e;">0 kg</strong></div>
-                    <div>POWER<strong id="omega-pwr" style="color:#f0883e;">0W</strong></div>
-                    <div>COMMS<strong id="omega-kbps" style="color:#f0883e;">0 kbps</strong></div>
+                    <div>COST<strong id="omega-cost" style="color:#f0883e;">--</strong></div>
+                    <div>MASS<strong id="omega-mass" style="color:#f0883e;">--</strong></div>
+                    <div>POWER<strong id="omega-pwr" style="color:#f0883e;">--</strong></div>
+                    <div>COMMS<strong id="omega-kbps" style="color:#f0883e;">--</strong></div>
                 </div>
             </div>
         </div>
 
-        <!-- HEAD-TO-HEAD RACE TELEMETRY VIEWPORT -->
+        <!-- 04. HEAD-TO-HEAD RACE TELEMETRY VIEWPORT -->
         <div class="panel" style="margin-top: 20px;">
-            <h2>03. HEAD-TO-HEAD INTERPLANETARY RACE TELEMETRY</h2>
+            <h2>04. HEAD-TO-HEAD INTERPLANETARY RACE TELEMETRY</h2>
             <div class="race-controls">
-                <span id="race-status" style="color: #8b949e; font-size: 0.88rem;">STATUS: READY ON LAUNCH PAD</span>
-                <button class="btn-primary" onclick="launchCompetitiveRace()">🚀 LAUNCH HEAD-TO-HEAD RACE</button>
+                <span id="race-status" style="color: #8b949e; font-size: 0.88rem;">STATUS: BOTH TEAMS MUST COMPLETE ALL SELECTIONS (CONTRACT READY)</span>
+                <button id="launch-race-btn" class="btn-primary" onclick="launchCompetitiveRace()" disabled>🚀 LAUNCH HEAD-TO-HEAD RACE</button>
             </div>
             <canvas id="raceCanvas" width="1100" height="260"></canvas>
             <div id="winner-banner" class="winner-banner"></div>
@@ -459,17 +696,21 @@
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDummyKeyForCompatMode991283",
-            authDomain: "ciss-space-architect.firebaseapp.com",
-            databaseURL: "https://ciss-space-architect-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "ciss-space-architect",
-            storageBucket: "ciss-space-architect.appspot.com",
-            messagingSenderId: "1234567890",
-            appId: "1:1234567890:web:abcdef123456"
-        };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        // --- LIVE CROSS-DEVICE MQTT WEBSOCKET RELAY ---
+        const TOPIC_PREFIX = 'ciss_space_architect_v2/competitive';
+        const clientId = 'ciss_comp_' + Math.random().toString(16).substr(2, 8);
+        const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
+            clientId: clientId,
+            clean: true,
+            reconnectPeriod: 2000
+        });
+
+        let relayConnected = false;
+        let myRole = null; // 'alpha' (Host / Team 1) or 'omega' (Joiner / Team 2)
+        let activeRoomCode = null;
+        let openLobbies = {};
+        let shieldTouched = { alpha: false, omega: false };
+        let raceTriggerId = 0;
 
         const contracts = {
             europa_relay: { name: "Europa Cryobot Relay", target: "Europa (5.2 AU)", color: "#a6e3e9", budget: 950, maxMass: 1600, reqPower: 350, reqShield: 80, minKbps: 500, distAU: 5.2 },
@@ -484,44 +725,354 @@
             inst: { Camera: { cost: 40, mass: 60, sci: 50, reqKbps: 50 }, Radar: { cost: 150, mass: 220, sci: 120, reqKbps: 400 }, Spectrometer: { cost: 110, mass: 100, sci: 90, reqKbps: 250 } }
         };
 
-        let activeContractKey = 'europa_relay';
+        let roomState = {
+            roomCode: null,
+            contract: 'europa_relay',
+            raceTrigger: 0,
+            alpha: {
+                loggedIn: false, name: '', country: '',
+                launcher: '', power: '', comm: '', inst: '', route: '',
+                shield: 10, shieldSet: false, isReady: false
+            },
+            omega: {
+                loggedIn: false, name: '', country: '',
+                launcher: '', power: '', comm: '', inst: '', route: '',
+                shield: 10, shieldSet: false, isReady: false
+            }
+        };
+
         let raceRunning = false;
         let alphaProg = 0;
         let omegaProg = 0;
-        let alphaData = {};
-        let omegaData = {};
-        let compRoom = null;
-        let isRemoteSync = false;
+        let alphaComputed = {};
+        let omegaComputed = {};
 
-        function selectContract(key, el) {
-            activeContractKey = key;
-            document.querySelectorAll('.contract-card').forEach(c => c.classList.remove('active'));
-            if (el) el.classList.add('active');
-            recalcTeams();
+        mqttClient.on('connect', () => {
+            relayConnected = true;
+            const badge = document.getElementById('relay-status');
+            badge.innerText = '🟢 LIVE MULTIPLAYER RELAY ONLINE';
+            badge.classList.add('online');
+            mqttClient.subscribe(`${TOPIC_PREFIX}/lobby/+`);
+        });
+
+        mqttClient.on('offline', () => {
+            relayConnected = false;
+            const badge = document.getElementById('relay-status');
+            badge.innerText = '🟡 RECONNECTING TO RELAY...';
+            badge.classList.remove('online');
+        });
+
+        mqttClient.on('message', (topic, message) => {
+            const text = message.toString();
+            if (!text) return;
+            let data;
+            try { data = JSON.parse(text); } catch (e) { return; }
+
+            // 1. Matchmaking Lobby Listing Updates
+            if (topic.startsWith(`${TOPIC_PREFIX}/lobby/`)) {
+                const code = topic.split('/').pop();
+                if (data && data.status === 'OPEN' && (Date.now() - data.updatedAt < 900000)) {
+                    openLobbies[code] = data;
+                } else {
+                    delete openLobbies[code];
+                }
+                renderLobbyBrowser();
+                return;
+            }
+
+            // 2. Active Room State Sync
+            if (activeRoomCode && topic === `${TOPIC_PREFIX}/room/${activeRoomCode}`) {
+                applyIncomingRoomState(data);
+            }
+        });
+
+        function validateProfile() {
+            const name = document.getElementById('player-name-input').value.trim();
+            const country = document.getElementById('player-country-input').value;
+            if (!name) {
+                alert("⚠️ Please enter your Commander / Agency Name first.");
+                document.getElementById('player-name-input').focus();
+                return null;
+            }
+            if (!country) {
+                alert("⚠️ Please select your Country first.");
+                document.getElementById('player-country-input').focus();
+                return null;
+            }
+            return { name, country };
         }
 
-        function computeTeam(prefix) {
-            const c = contracts[activeContractKey];
-            const l = parts.launcher[document.getElementById(`${prefix}-launcher`).value];
-            const p = parts.power[document.getElementById(`${prefix}-power`).value];
-            const cm = parts.comm[document.getElementById(`${prefix}-comm`).value];
-            const ins = parts.inst[document.getElementById(`${prefix}-inst`).value];
-            const route = document.getElementById(`${prefix}-route`).value;
-            const shield = parseInt(document.getElementById(`${prefix}-shield`).value);
+        function onProfileEdit() {
+            const name = document.getElementById('player-name-input').value.trim();
+            const country = document.getElementById('player-country-input').value;
+            if (myRole && name && country) {
+                roomState[myRole].name = name;
+                roomState[myRole].country = country;
+                broadcastRoomState();
+                updateUI();
+            }
+        }
 
-            document.getElementById(`${prefix}-shield-val`).innerText = shield;
+        // HOST A DUEL ROOM (BECOMES TEAM 1)
+        function hostCompetitiveDuel() {
+            const profile = validateProfile();
+            if (!profile) return;
+            if (!relayConnected) {
+                alert("Still connecting to live network relay. Please wait 2 seconds and try again.");
+                return;
+            }
 
-            const discount = route === 'GravityAssist' ? 50 : 0;
-            const cost = (l.cost + p.cost + cm.cost + ins.cost + shield * 2) - discount;
-            const mass = p.mass + cm.mass + ins.mass + shield * 5;
+            if (activeRoomCode) {
+                mqttClient.unsubscribe(`${TOPIC_PREFIX}/room/${activeRoomCode}`);
+            }
+
+            activeRoomCode = Math.floor(1000 + Math.random() * 9000).toString();
+            myRole = 'alpha';
+            shieldTouched = { alpha: false, omega: false };
+
+            roomState = {
+                roomCode: activeRoomCode,
+                contract: 'europa_relay',
+                raceTrigger: 0,
+                alpha: {
+                    loggedIn: true, name: profile.name, country: profile.country,
+                    launcher: '', power: '', comm: '', inst: '', route: '',
+                    shield: 10, shieldSet: false, isReady: false
+                },
+                omega: {
+                    loggedIn: false, name: '', country: '',
+                    launcher: '', power: '', comm: '', inst: '', route: '',
+                    shield: 10, shieldSet: false, isReady: false
+                }
+            };
+
+            mqttClient.subscribe(`${TOPIC_PREFIX}/room/${activeRoomCode}`);
+            broadcastRoomState();
+            publishLobbyEntry('OPEN');
+
+            document.getElementById('comp-room-status').innerText = `HOSTING ROOM: ${activeRoomCode} (YOU ARE TEAM 1)`;
+            document.getElementById('lobby-browser').style.display = 'none';
+            syncDOMFromState();
+            updateUI();
+        }
+
+        // SEARCH FOR OPEN RIVAL TEAMS
+        function searchForTeams() {
+            if (!relayConnected) {
+                alert("Still connecting to live network relay. Please wait 2 seconds.");
+                return;
+            }
+            document.getElementById('lobby-browser').style.display = 'block';
+            mqttClient.subscribe(`${TOPIC_PREFIX}/lobby/+`);
+            renderLobbyBrowser();
+        }
+
+        function renderLobbyBrowser() {
+            const listEl = document.getElementById('lobby-list');
+            const codes = Object.keys(openLobbies).filter(c => c !== activeRoomCode);
+
+            if (codes.length === 0) {
+                listEl.innerHTML = `<div style="padding:8px 0; color:#8b949e;">No open teams hosting right now. Ask your opponent to click <strong>HOST DUEL ROOM</strong>, or host one yourself!</div>`;
+                return;
+            }
+
+            listEl.innerHTML = codes.map(code => {
+                const item = openLobbies[code];
+                const contractName = contracts[item.contract]?.name || item.contract;
+                return `
+                    <div class="lobby-item">
+                        <div>
+                            <strong style="color:#58a6ff;">${escapeHtml(item.hostName)}</strong>
+                            <span style="color:#8b949e;">(${escapeHtml(item.hostCountry)})</span><br>
+                            <span style="font-size:0.78rem; color:#c9d1d9;">Contract: ${escapeHtml(contractName)} | Room Code: <strong>${code}</strong></span>
+                        </div>
+                        <button class="btn-secondary" style="background:#2ea043; border-color:#238636;" onclick="connectToRoomCode('${code}')">⚔️ JOIN DUEL</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function joinByCode() {
+            const code = document.getElementById('comp-room-input').value.trim();
+            if (code.length !== 4) {
+                alert("⚠️ Please enter the 4-digit Room Code provided by the host.");
+                return;
+            }
+            connectToRoomCode(code);
+        }
+
+        // JOIN AN EXISTING DUEL ROOM (BECOMES TEAM 2)
+        function connectToRoomCode(code) {
+            const profile = validateProfile();
+            if (!profile) return;
+            if (!relayConnected) {
+                alert("Still connecting to live network relay. Please wait 2 seconds.");
+                return;
+            }
+
+            if (activeRoomCode) {
+                mqttClient.unsubscribe(`${TOPIC_PREFIX}/room/${activeRoomCode}`);
+            }
+
+            activeRoomCode = code;
+            myRole = 'omega';
+            document.getElementById('comp-room-input').value = code;
+            document.getElementById('comp-room-status').innerText = `JOINED ROOM: ${code} (YOU ARE TEAM 2)`;
+            document.getElementById('lobby-browser').style.display = 'none';
+
+            // Subscribe and request/merge room state
+            mqttClient.subscribe(`${TOPIC_PREFIX}/room/${code}`, () => {
+                // Announce join immediately after brief retained-message window
+                setTimeout(() => {
+                    roomState.roomCode = code;
+                    roomState.omega.loggedIn = true;
+                    roomState.omega.name = profile.name;
+                    roomState.omega.country = profile.country;
+                    broadcastRoomState();
+                    // Mark lobby room as full so a 3rd player doesn't join
+                    mqttClient.publish(`${TOPIC_PREFIX}/lobby/${code}`, JSON.stringify({ status: 'FULL', updatedAt: Date.now() }), { retain: true });
+                    syncDOMFromState();
+                    updateUI();
+                }, 450);
+            });
+        }
+
+        function publishLobbyEntry(status) {
+            if (!activeRoomCode || myRole !== 'alpha') return;
+            const entry = {
+                status: status,
+                roomCode: activeRoomCode,
+                hostName: roomState.alpha.name,
+                hostCountry: roomState.alpha.country,
+                contract: roomState.contract,
+                updatedAt: Date.now()
+            };
+            mqttClient.publish(`${TOPIC_PREFIX}/lobby/${activeRoomCode}`, JSON.stringify(entry), { retain: true });
+        }
+
+        function broadcastRoomState() {
+            if (!activeRoomCode || !relayConnected) return;
+            mqttClient.publish(`${TOPIC_PREFIX}/room/${activeRoomCode}`, JSON.stringify(roomState), { retain: true });
+        }
+
+        function applyIncomingRoomState(incoming) {
+            if (!incoming) return;
+
+            // Preserve our own local edits while taking the opponent's authoritative slice
+            if (myRole === 'alpha') {
+                const mySlice = { ...roomState.alpha };
+                roomState = { ...incoming, alpha: mySlice };
+                if (incoming.omega && incoming.omega.loggedIn) {
+                    publishLobbyEntry('FULL');
+                }
+            } else if (myRole === 'omega') {
+                const mySlice = { ...roomState.omega };
+                // Ensure omega stays logged in once joined
+                mySlice.loggedIn = true;
+                if (!mySlice.name) {
+                    mySlice.name = document.getElementById('player-name-input').value.trim();
+                    mySlice.country = document.getElementById('player-country-input').value;
+                }
+                roomState = { ...incoming, omega: mySlice };
+            }
+
+            syncDOMFromState();
+            updateUI();
+
+            // Check synchronized race launch trigger
+            if (incoming.raceTrigger && incoming.raceTrigger !== raceTriggerId && !raceRunning) {
+                raceTriggerId = incoming.raceTrigger;
+                startRaceAnimation();
+            }
+        }
+
+        function selectContract(key) {
+            // Only Host (Team 1) can change contract in multiplayer
+            if (myRole === 'omega') return;
+            roomState.contract = key;
+            if (myRole === 'alpha') {
+                broadcastRoomState();
+                if (!roomState.omega.loggedIn) publishLobbyEntry('OPEN');
+            }
+            updateUI();
+        }
+
+        function onTeamInput(prefix) {
+            if (myRole && myRole !== prefix) return;
+            const t = roomState[prefix];
+            t.launcher = document.getElementById(`${prefix}-launcher`).value;
+            t.power = document.getElementById(`${prefix}-power`).value;
+            t.comm = document.getElementById(`${prefix}-comm`).value;
+            t.inst = document.getElementById(`${prefix}-inst`).value;
+            t.route = document.getElementById(`${prefix}-route`).value;
+            updateUI();
+            if (myRole === prefix) broadcastRoomState();
+        }
+
+        function onShieldMove(prefix) {
+            if (myRole && myRole !== prefix) return;
+            shieldTouched[prefix] = true;
+            const t = roomState[prefix];
+            t.shield = parseInt(document.getElementById(`${prefix}-shield`).value, 10);
+            t.shieldSet = true;
+            updateUI();
+            if (myRole === prefix) broadcastRoomState();
+        }
+
+        function syncDOMFromState() {
+            ['alpha', 'omega'].forEach(prefix => {
+                const t = roomState[prefix];
+                document.getElementById(`${prefix}-launcher`).value = t.launcher || '';
+                document.getElementById(`${prefix}-power`).value = t.power || '';
+                document.getElementById(`${prefix}-comm`).value = t.comm || '';
+                document.getElementById(`${prefix}-inst`).value = t.inst || '';
+                document.getElementById(`${prefix}-route`).value = t.route || '';
+                document.getElementById(`${prefix}-shield`).value = t.shield || 10;
+            });
+        }
+
+        function evaluateTeam(prefix) {
+            const c = contracts[roomState.contract];
+            const t = roomState[prefix];
+
+            const allChosen = Boolean(t.launcher && t.power && t.comm && t.inst && t.route && t.shieldSet);
+
+            if (t.shieldSet) {
+                document.getElementById(`${prefix}-shield-val`).innerText = `${t.shield}%`;
+            } else {
+                document.getElementById(`${prefix}-shield-val`).innerText = `Not Set (Move Slider)`;
+            }
+
+            if (!allChosen) {
+                t.isReady = false;
+                document.getElementById(`${prefix}-cost`).innerText = `--`;
+                document.getElementById(`${prefix}-cost`).style.color = '#8b949e';
+                document.getElementById(`${prefix}-mass`).innerText = `--`;
+                document.getElementById(`${prefix}-mass`).style.color = '#8b949e';
+                document.getElementById(`${prefix}-pwr`).innerText = `--`;
+                document.getElementById(`${prefix}-kbps`).innerText = `--`;
+
+                const badge = document.getElementById(`${prefix}-badge`);
+                badge.innerText = "CONTRACT NOT READY";
+                badge.className = "status-pill";
+                return { isReady: false };
+            }
+
+            const l = parts.launcher[t.launcher];
+            const p = parts.power[t.power];
+            const cm = parts.comm[t.comm];
+            const ins = parts.inst[t.inst];
+
+            const discount = t.route === 'GravityAssist' ? 50 : 0;
+            const cost = (l.cost + p.cost + cm.cost + ins.cost + t.shield * 2) - discount;
+            const mass = p.mass + cm.mass + ins.mass + t.shield * 5;
             const effectiveCap = Math.min(c.maxMass, l.cap);
-
-            const pwrKey = document.getElementById(`${prefix}-power`).value;
-            const deliveredPwr = pwrKey === 'Solar' ? Math.round(p.pwr * Math.max(0.2, 1 - (c.distAU / 10))) : p.pwr;
+            const deliveredPwr = t.power === 'Solar' ? Math.round(p.pwr * Math.max(0.2, 1 - (c.distAU / 10))) : p.pwr;
 
             const validBudget = cost <= c.budget;
             const validMass = mass <= effectiveCap;
-            const isValid = validBudget && validMass;
+            const isReady = validBudget && validMass;
+            t.isReady = isReady;
 
             document.getElementById(`${prefix}-cost`).innerText = `$${cost}M / $${c.budget}M`;
             document.getElementById(`${prefix}-cost`).style.color = validBudget ? '#2ea043' : '#f85149';
@@ -533,43 +1084,157 @@
             document.getElementById(`${prefix}-kbps`).innerText = `${cm.kbps} kbps`;
 
             const badge = document.getElementById(`${prefix}-badge`);
-            badge.innerText = isValid ? "CONTRACT READY" : "CAP EXCEEDED";
-            badge.className = isValid ? "status-pill" : "status-pill invalid";
+            if (isReady) {
+                badge.innerText = "CONTRACT READY";
+                badge.className = "status-pill ready";
+            } else {
+                badge.innerText = "CAP EXCEEDED (NOT READY)";
+                badge.className = "status-pill invalid";
+            }
 
             return {
-                name: document.getElementById(`${prefix}-name`).value,
-                cost, mass, effectiveCap, deliveredPwr, kbps: cm.kbps, shield,
-                sci: ins.sci, reqKbps: ins.reqKbps, route, isValid,
-                speed: route === 'Direct' ? 0.0042 : 0.0029
+                name: `${t.name || (prefix === 'alpha' ? 'Team 1' : 'Team 2')} (${t.country || 'N/A'})`,
+                cost, mass, effectiveCap, deliveredPwr, kbps: cm.kbps, shield: t.shield,
+                sci: ins.sci, reqKbps: ins.reqKbps, route: t.route, isReady,
+                speed: t.route === 'Direct' ? 0.0042 : 0.0029
             };
         }
 
-        function recalcTeams() {
-            alphaData = computeTeam('alpha');
-            omegaData = computeTeam('omega');
-            if (!isRemoteSync) syncTeamsToFirebase();
+        function updateUI() {
+            // 1. Update Contract Highlighting & Lock for Team 2
+            document.querySelectorAll('.contract-card').forEach(el => {
+                el.classList.remove('active');
+                if (myRole === 'omega') el.classList.add('locked');
+                else el.classList.remove('locked');
+            });
+            const activeCard = document.getElementById(`card-${roomState.contract}`);
+            if (activeCard) activeCard.classList.add('active');
+            document.getElementById('contract-lock-note').innerText =
+                myRole === 'omega' ? '(Selected by Host — Team 1)' : '';
+
+            // 2. Update Team 1 & Team 2 Names and Logged-In Roster
+            const t1 = roomState.alpha;
+            const t2 = roomState.omega;
+
+            document.getElementById('alpha-name').value = t1.loggedIn
+                ? `${t1.name} (${t1.country})`
+                : 'Awaiting Host (Team 1)...';
+            document.getElementById('omega-name').value = t2.loggedIn
+                ? `${t2.name} (${t2.country})`
+                : 'Awaiting Rival (Team 2)...';
+
+            const r1Slot = document.getElementById('roster-team1');
+            if (t1.loggedIn) {
+                r1Slot.classList.add('logged-in');
+                document.getElementById('roster-t1-text').innerText = `${t1.name} — ${t1.country}`;
+                document.getElementById('roster-t1-text').style.color = '#e6edf3';
+                document.getElementById('roster-t1-badge').innerText = '● LOGGED IN';
+                document.getElementById('roster-t1-badge').style.color = '#3fb950';
+            } else {
+                r1Slot.classList.remove('logged-in');
+                document.getElementById('roster-t1-text').innerText = 'Waiting for host...';
+                document.getElementById('roster-t1-badge').innerText = 'OFFLINE';
+            }
+
+            const r2Slot = document.getElementById('roster-team2');
+            if (t2.loggedIn) {
+                r2Slot.classList.add('logged-in');
+                document.getElementById('roster-t2-text').innerText = `${t2.name} — ${t2.country}`;
+                document.getElementById('roster-t2-text').style.color = '#e6edf3';
+                document.getElementById('roster-t2-badge').innerText = '● LOGGED IN';
+                document.getElementById('roster-t2-badge').style.color = '#3fb950';
+            } else {
+                r2Slot.classList.remove('logged-in');
+                document.getElementById('roster-t2-text').innerText = 'Waiting for challenger...';
+                document.getElementById('roster-t2-text').style.color = '#8b949e';
+                document.getElementById('roster-t2-badge').innerText = 'OFFLINE';
+                document.getElementById('roster-t2-badge').style.color = '#8b949e';
+            }
+
+            // 3. Evaluate Both Teams
+            alphaComputed = evaluateTeam('alpha');
+            omegaComputed = evaluateTeam('omega');
+
+            const bothReady = alphaComputed.isReady && omegaComputed.isReady;
+
+            // 4. Enforce Role Control Isolation (Team 1 cannot touch Team 2 & vice versa)
+            const alphaControls = document.querySelectorAll('#deck-alpha select, #deck-alpha input[type="range"]');
+            const omegaControls = document.querySelectorAll('#deck-omega select, #deck-omega input[type="range"]');
+
+            alphaControls.forEach(el => { el.disabled = (myRole !== 'alpha'); });
+            omegaControls.forEach(el => { el.disabled = (myRole !== 'omega'); });
+
+            // 5. Classified Veil Until BOTH Contracts Are Ready
+            const veilAlpha = document.getElementById('veil-alpha');
+            const veilOmega = document.getElementById('veil-omega');
+
+            if (myRole === 'alpha') {
+                veilAlpha.style.display = 'none';
+                if (!bothReady) {
+                    veilOmega.style.display = 'flex';
+                    document.getElementById('veil-omega-msg').innerText = t2.loggedIn
+                        ? (t2.isReady
+                            ? `${t2.name} has locked in CONTRACT READY! Finish your selections to reveal both builds.`
+                            : `${t2.name} is selecting subsystems... Choices reveal automatically once both teams reach CONTRACT READY.`)
+                        : 'Waiting for a challenger to join Team 2...';
+                } else {
+                    veilOmega.style.display = 'none';
+                }
+            } else if (myRole === 'omega') {
+                veilOmega.style.display = 'none';
+                if (!bothReady) {
+                    veilAlpha.style.display = 'flex';
+                    document.getElementById('veil-alpha-msg').innerText = t1.isReady
+                        ? `${t1.name} has locked in CONTRACT READY! Finish your selections to reveal both builds.`
+                        : `${t1.name} is selecting subsystems... Choices reveal automatically once both teams reach CONTRACT READY.`;
+                } else {
+                    veilAlpha.style.display = 'none';
+                }
+            } else {
+                // Not connected to a room yet
+                veilAlpha.style.display = 'none';
+                veilOmega.style.display = 'none';
+            }
+
+            // 6. Enable Launch Button Only When Both Teams Are Logged In & CONTRACT READY
+            const launchBtn = document.getElementById('launch-race-btn');
+            const statusText = document.getElementById('race-status');
+
+            if (!myRole) {
+                launchBtn.disabled = true;
+                statusText.innerText = 'STATUS: ENTER NAME & COUNTRY ABOVE TO HOST OR JOIN A DUEL';
+            } else if (!t1.loggedIn || !t2.loggedIn) {
+                launchBtn.disabled = true;
+                statusText.innerText = 'STATUS: WAITING FOR BOTH TEAMS TO LOG IN';
+            } else if (!bothReady) {
+                launchBtn.disabled = true;
+                statusText.innerText = 'STATUS: BOTH TEAMS MUST COMPLETE ALL SELECTIONS (CONTRACT READY)';
+            } else {
+                launchBtn.disabled = false;
+                statusText.innerText = 'STATUS: BOTH CONTRACTS READY & REVEALED // CLEARED FOR LAUNCH!';
+                statusText.style.color = '#3fb950';
+            }
         }
 
-        function launchCompetitiveRace(fromRemote = false) {
-            recalcTeams();
-            if (!alphaData.isValid || !omegaData.isValid) {
-                alert("⚠️ Both teams must stay within the Contract Budget and Launch Vehicle Mass Limits before launching!");
-                return;
-            }
+        function launchCompetitiveRace() {
+            if (!alphaComputed.isReady || !omegaComputed.isReady) return;
+            raceTriggerId = Date.now();
+            roomState.raceTrigger = raceTriggerId;
+            broadcastRoomState();
+            startRaceAnimation();
+        }
+
+        function startRaceAnimation() {
             alphaProg = 0;
             omegaProg = 0;
             raceRunning = true;
             document.getElementById('winner-banner').style.display = 'none';
             document.getElementById('race-status').innerText = "STATUS: TELEMETRY LIVE // INTERPLANETARY TRANSIT IN PROGRESS";
-
-            if (compRoom && !fromRemote) {
-                db.ref(`competitive_rooms/${compRoom}/raceTrigger`).set(Date.now());
-            }
         }
 
         function evaluateRaceWinner() {
             raceRunning = false;
-            const c = contracts[activeContractKey];
+            const c = contracts[roomState.contract];
 
             function scoreTeam(t, arrivalRank) {
                 let failReasons = [];
@@ -588,17 +1253,17 @@
                 return { score: total, status: `SUCCESS (Rank #${arrivalRank} Arrival +${arrivalBonus} PTS)` };
             }
 
-            const alphaFirst = alphaData.speed >= omegaData.speed;
-            const resA = scoreTeam(alphaData, alphaFirst ? 1 : 2);
-            const resO = scoreTeam(omegaData, alphaFirst ? 2 : 1);
+            const alphaFirst = alphaComputed.speed >= omegaComputed.speed;
+            const resA = scoreTeam(alphaComputed, alphaFirst ? 1 : 2);
+            const resO = scoreTeam(omegaComputed, alphaFirst ? 2 : 1);
 
             let headline = "";
             if (resA.score === 0 && resO.score === 0) {
                 headline = "❌ NO CONTRACT WINNER: Both rival spacecraft suffered mission failure!";
             } else if (resA.score > resO.score) {
-                headline = `🏆 CONTRACT AWARDED TO: ${alphaData.name} (${resA.score} PTS vs ${resO.score} PTS)`;
+                headline = `🏆 CONTRACT AWARDED TO: ${alphaComputed.name} (${resA.score} PTS vs ${resO.score} PTS)`;
             } else if (resO.score > resA.score) {
-                headline = `🏆 CONTRACT AWARDED TO: ${omegaData.name} (${resO.score} PTS vs ${resA.score} PTS)`;
+                headline = `🏆 CONTRACT AWARDED TO: ${omegaComputed.name} (${resO.score} PTS vs ${resA.score} PTS)`;
             } else {
                 headline = `🤝 EXACT TIE: Both teams scored ${resA.score} PTS!`;
             }
@@ -606,83 +1271,17 @@
             const banner = document.getElementById('winner-banner');
             banner.style.display = 'block';
             banner.innerHTML = `
-                <strong style="color:#58a6ff; font-size:1.05rem;">${headline}</strong><br><br>
-                <span style="color:#58a6ff;">■ ${alphaData.name}:</span> <strong>${resA.score} PTS</strong> — ${resA.status}<br>
-                <span style="color:#f0883e;">■ ${omegaData.name}:</span> <strong>${resO.score} PTS</strong> — ${resO.status}
+                <strong style="color:#58a6ff; font-size:1.05rem;">${escapeHtml(headline)}</strong><br><br>
+                <span style="color:#58a6ff;">■ ${escapeHtml(alphaComputed.name)}:</span> <strong>${resA.score} PTS</strong> — ${escapeHtml(resA.status)}<br>
+                <span style="color:#f0883e;">■ ${escapeHtml(omegaComputed.name)}:</span> <strong>${resO.score} PTS</strong> — ${escapeHtml(resO.status)}
             `;
             document.getElementById('race-status').innerText = "STATUS: CONTRACT EVALUATION COMPLETE";
         }
 
-        function createCompetitiveRoom() {
-            compRoom = Math.floor(1000 + Math.random() * 9000).toString();
-            document.getElementById('comp-room-status').innerText = `ACTIVE ROOM CODE: ${compRoom}`;
-            syncTeamsToFirebase();
-            listenToCompetitiveRoom();
-        }
-
-        function joinCompetitiveRoom() {
-            const code = document.getElementById('comp-room-input').value.trim();
-            if (code.length < 4) return alert("Enter a valid 4-digit room code.");
-            compRoom = code;
-            document.getElementById('comp-room-status').innerText = `CONNECTED TO ROOM: ${compRoom}`;
-            listenToCompetitiveRoom();
-        }
-
-        function syncTeamsToFirebase() {
-            if (!compRoom) return;
-            const payload = {
-                contract: activeContractKey,
-                alpha: {
-                    name: document.getElementById('alpha-name').value,
-                    launcher: document.getElementById('alpha-launcher').value,
-                    power: document.getElementById('alpha-power').value,
-                    comm: document.getElementById('alpha-comm').value,
-                    inst: document.getElementById('alpha-inst').value,
-                    route: document.getElementById('alpha-route').value,
-                    shield: document.getElementById('alpha-shield').value
-                },
-                omega: {
-                    name: document.getElementById('omega-name').value,
-                    launcher: document.getElementById('omega-launcher').value,
-                    power: document.getElementById('omega-power').value,
-                    comm: document.getElementById('omega-comm').value,
-                    inst: document.getElementById('omega-inst').value,
-                    route: document.getElementById('omega-route').value,
-                    shield: document.getElementById('omega-shield').value
-                }
-            };
-            db.ref(`competitive_rooms/${compRoom}/state`).set(payload);
-        }
-
-        function listenToCompetitiveRoom() {
-            if (!compRoom) return;
-            db.ref(`competitive_rooms/${compRoom}/state`).on('value', snap => {
-                const d = snap.val();
-                if (!d) return;
-                isRemoteSync = true;
-                if (d.contract && d.contract !== activeContractKey) {
-                    activeContractKey = d.contract;
-                }
-                ['alpha', 'omega'].forEach(p => {
-                    if (d[p]) {
-                        document.getElementById(`${p}-name`).value = d[p].name;
-                        document.getElementById(`${p}-launcher`).value = d[p].launcher;
-                        document.getElementById(`${p}-power`).value = d[p].power;
-                        document.getElementById(`${p}-comm`).value = d[p].comm;
-                        document.getElementById(`${p}-inst`).value = d[p].inst;
-                        document.getElementById(`${p}-route`).value = d[p].route;
-                        document.getElementById(`${p}-shield`).value = d[p].shield;
-                    }
-                });
-                recalcTeams();
-                isRemoteSync = false;
-            });
-
-            db.ref(`competitive_rooms/${compRoom}/raceTrigger`).on('value', snap => {
-                if (snap.val() && !raceRunning) {
-                    launchCompetitiveRace(true);
-                }
-            });
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
         }
 
         const rCanvas = document.getElementById('raceCanvas');
@@ -691,7 +1290,7 @@
         function drawRace() {
             const w = rCanvas.width;
             const h = rCanvas.height;
-            const c = contracts[activeContractKey];
+            const c = contracts[roomState.contract];
 
             rCtx.fillStyle = '#020408';
             rCtx.fillRect(0, 0, w, h);
@@ -729,17 +1328,20 @@
             const ax = startX + (endX - startX) * alphaProg;
             const ox = startX + (endX - startX) * omegaProg;
 
+            const labelA = roomState.alpha.loggedIn ? `${roomState.alpha.name} (${roomState.alpha.country})` : 'TEAM 1';
+            const labelO = roomState.omega.loggedIn ? `${roomState.omega.name} (${roomState.omega.country})` : 'TEAM 2';
+
             rCtx.fillStyle = '#58a6ff';
             rCtx.fillRect(ax - 10, laneA - 7, 20, 14);
-            rCtx.fillText(`${alphaData.name || 'ALPHA'} (${Math.round(alphaProg * 100)}%)`, ax - 30, laneA - 16);
+            rCtx.fillText(`${labelA} (${Math.round(alphaProg * 100)}%)`, ax - 30, laneA - 16);
 
             rCtx.fillStyle = '#f0883e';
             rCtx.fillRect(ox - 10, laneO - 7, 20, 14);
-            rCtx.fillText(`${omegaData.name || 'OMEGA'} (${Math.round(omegaProg * 100)}%)`, ox - 30, laneO - 16);
+            rCtx.fillText(`${labelO} (${Math.round(omegaProg * 100)}%)`, ox - 30, laneO - 16);
 
             if (raceRunning) {
-                alphaProg = Math.min(1, alphaProg + alphaData.speed);
-                omegaProg = Math.min(1, omegaProg + omegaData.speed);
+                alphaProg = Math.min(1, alphaProg + alphaComputed.speed);
+                omegaProg = Math.min(1, omegaProg + omegaComputed.speed);
                 if (alphaProg >= 1 && omegaProg >= 1) {
                     evaluateRaceWinner();
                 }
@@ -769,7 +1371,7 @@
         }
 
         renderBg();
-        recalcTeams();
+        updateUI();
         drawRace();
     </script>
 </body>
