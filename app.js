@@ -1092,7 +1092,7 @@ function startMission() {
 
     if (targetElement) {
         const elementPosition = targetElement.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset + 820;
+        const offsetPosition = elementPosition + window.pageYOffset + 620;
 
         window.scrollTo({
             top: offsetPosition,
