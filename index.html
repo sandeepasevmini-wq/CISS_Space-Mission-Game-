@@ -732,10 +732,45 @@
                     <div id="dash-sync-feed" style="font-size:0.74rem; color:#a5d6ff; margin-top:4px; font-style:italic;"></div>
                 </div>
                 
-                <a href="basics.html" target="_blank" style="display: block; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #1f6feb 0%, #238636 100%); border: 1px solid #388bfd; color: white; padding: 12px; border-radius: 6px; font-family: monospace; font-weight: bold; text-decoration: none; text-align: center; letter-spacing: 2px; box-shadow: 0 0 15px rgba(31, 111, 235, 0.4); transition: all 0.3s ease;">
-                    LEARN THE BASICS
-                </a>
-            </div>
+<!-- COMPACT ACTION BUTTONS: LEARN BASICS + HOW TO PLAY -->
+<div class="guide-btn-group" style="display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <button id="learn-basics-btn" onclick="openBasicsModal()" style="
+        padding: 6px 12px;
+        font-size: 0.78rem;
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        background: #21262d;
+        color: #c9d1d9;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    " onmouseover="this.style.borderColor='#58a6ff'; this.style.color='#ffffff';" 
+       onmouseout="this.style.borderColor='#30363d'; this.style.color='#c9d1d9';">
+        📘 Learn Basics
+    </button>
+
+    <a href="how-to-play.html" target="_blank" rel="noopener noreferrer" style="
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        font-size: 0.78rem;
+        font-family: 'Courier New', monospace;
+        font-weight: 700;
+        text-decoration: none;
+        background: linear-gradient(135deg, #1f6feb, #238636);
+        color: #ffffff;
+        border: 1px solid rgba(88, 166, 255, 0.5);
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(31, 111, 235, 0.25);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 14px rgba(88, 166, 255, 0.45)';" 
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(31, 111, 235, 0.25)';">
+        🚀 How to Play
+    </a>
+</div>
 
             <h2>6. ORBIT TELEMETRY &amp; MISSION CONTROL</h2>
             
