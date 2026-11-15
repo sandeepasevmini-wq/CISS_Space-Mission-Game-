@@ -732,26 +732,30 @@
                     <div id="dash-sync-feed" style="font-size:0.74rem; color:#a5d6ff; margin-top:4px; font-style:italic;"></div>
                 </div>
                 
-<!-- EQUAL-WIDTH SPREAD BUTTON CONTAINER WITH GRADIENT SHINE -->
-<div class="guide-btn-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; margin-bottom: 15px;">
+<!-- EQUAL-WIDTH SPREAD BUTTON CONTAINER WITH MATCHING GRADIENT SHINE -->
+<div class="guide-btn-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; margin-bottom: 15px; align-items: center;">
     
     <!-- LEARN BASICS BUTTON -->
     <button id="learn-basics-btn" onclick="openBasicsModal()" style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
         width: 100%;
         padding: 8px 14px;
         font-size: 0.8rem;
         font-family: 'Courier New', monospace;
         font-weight: 700;
-        background: linear-gradient(135deg, #21262d, #30363d);
+        background: linear-gradient(135deg, #1f6feb, #238636);
         color: #ffffff;
-        border: 1px solid rgba(88, 166, 255, 0.4);
+        border: 1px solid rgba(88, 166, 255, 0.5);
         border-radius: 6px;
-        box-shadow: 0 2px 10px rgba(33, 38, 45, 0.4);
+        box-shadow: 0 2px 10px rgba(31, 111, 235, 0.25);
         cursor: pointer;
         transition: all 0.2s ease;
         text-align: center;
-    " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 14px rgba(88, 166, 255, 0.35)';" 
-       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(33, 38, 45, 0.4)';">
+    " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 14px rgba(88, 166, 255, 0.45)';" 
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(31, 111, 235, 0.25)';">
         📘 Learn Basics
     </button>
 
