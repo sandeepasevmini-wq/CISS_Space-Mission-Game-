@@ -15,7 +15,9 @@
         body {
             background-color: #020408;
             color: #e6edf3;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            letter-spacing: 0.3px;
+            line-height: 1.6;
             margin: 0;
             padding: 0;
             overflow-x: hidden;
@@ -41,13 +43,14 @@
         .header-title h1 {
             margin: 0;
             color: #58a6ff;
+            font-family: 'Courier New', Courier, monospace;
             font-size: 1.45rem;
             letter-spacing: 1px;
         }
         .header-title p {
             margin: 4px 0 0 0;
             color: #8b949e;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
         .back-btn {
             background: #21262d;
@@ -59,6 +62,7 @@
             font-weight: bold;
             font-size: 0.85rem;
             transition: all 0.2s ease;
+            font-family: inherit;
         }
         .back-btn:hover {
             border-color: #58a6ff;
@@ -78,7 +82,9 @@
         }
         .panel h2 {
             margin-top: 0;
-            font-size: 1.05rem;
+            font-size: 0.95rem;
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 0.5px;
             color: #58a6ff;
             border-bottom: 1px solid #21262d;
             padding-bottom: 8px;
@@ -104,11 +110,11 @@
         }
         .contract-card h3 {
             margin: 0 0 6px 0;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: #e6edf3;
         }
         .contract-specs {
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             color: #8b949e;
             line-height: 1.5;
         }
@@ -144,7 +150,7 @@
             color: #e6edf3;
             font-family: inherit;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.95rem;
             padding: 6px 10px;
             border-radius: 4px;
             width: 65%;
@@ -156,6 +162,7 @@
             font-weight: bold;
             background: #238636;
             color: white;
+            font-family: 'Courier New', Courier, monospace;
         }
         .status-pill.invalid {
             background: #da3633;
@@ -165,9 +172,10 @@
         }
         .field-group label {
             display: block;
-            font-size: 0.78rem;
+            font-size: 0.8rem;
             color: #8b949e;
             margin-bottom: 4px;
+            font-weight: 500;
         }
         .field-group select, .field-group input[type="range"] {
             width: 100%;
@@ -177,7 +185,7 @@
             padding: 8px;
             border-radius: 4px;
             font-family: inherit;
-            font-size: 0.85rem;
+            font-size: 0.88rem;
         }
         .metrics-bar {
             display: grid;
@@ -190,6 +198,7 @@
             margin-top: 14px;
             text-align: center;
             font-size: 0.78rem;
+            font-family: 'Courier New', Courier, monospace;
         }
         .metrics-bar strong {
             display: block;
@@ -215,7 +224,7 @@
             font-weight: bold;
             font-size: 0.95rem;
             cursor: pointer;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         .btn-primary:hover { background: #2ea043; }
         .btn-secondary {
@@ -226,7 +235,7 @@
             border-radius: 6px;
             font-family: inherit;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             cursor: pointer;
         }
         #raceCanvas {
@@ -251,7 +260,7 @@
             flex-wrap: wrap;
             gap: 10px;
             align-items: center;
-            font-size: 0.82rem;
+            font-size: 0.88rem;
         }
         .sync-bar input {
             background: #161b22;
@@ -267,15 +276,13 @@
 <body>
     <canvas id="bgCanvas"></canvas>
 
-<header>
+    <header>
         <div class="header-title">
-            <span style="font-size: 0.72rem; color: #58a6ff; letter-spacing: 1.5px;">MULTI-TEAM CONTRACT // MODULE 02</span>
+            <span style="font-size: 0.72rem; color: #58a6ff; letter-spacing: 1.5px; font-family: 'Courier New', Courier, monospace;">MULTI-TEAM CONTRACT // MODULE 02</span>
             <h1>COMPETITIVE SCENARIOS</h1>
             <p>Design rival spacecraft architectures for shared mission contracts and race head-to-head.</p>
         </div>
-        <!-- Updated link with skipLoader=true parameter -->
-        <!-- In competitive.html -->
-<a href="index.html?skipLoader=true" class="back-btn">&larr; RETURN TO MAIN ARCHITECT</a>
+        <a href="index.html?skipLoader=true" class="back-btn">&larr; RETURN TO MAIN ARCHITECT</a>
     </header>
 
     <div class="container">
@@ -287,7 +294,7 @@
                 <button class="btn-secondary" onclick="createCompetitiveRoom()">📡 HOST RACE ROOM</button>
                 <input type="text" id="comp-room-input" placeholder="4-Digit Code">
                 <button class="btn-secondary" style="background:#2ea043; border-color:#238636;" onclick="joinCompetitiveRoom()">🚀 JOIN ROOM</button>
-                <span id="comp-room-status" style="color: #a5d6ff; font-weight: bold;">MODE: LOCAL DUAL-DECK</span>
+                <span id="comp-room-status" style="color: #a5d6ff; font-weight: bold; font-family: 'Courier New', Courier, monospace;">MODE: LOCAL DUAL-DECK</span>
             </div>
         </div>
 
@@ -443,7 +450,7 @@
         <div class="panel" style="margin-top: 20px;">
             <h2>03. HEAD-TO-HEAD INTERPLANETARY RACE TELEMETRY</h2>
             <div class="race-controls">
-                <span id="race-status" style="color: #8b949e; font-size: 0.85rem;">STATUS: READY ON LAUNCH PAD</span>
+                <span id="race-status" style="color: #8b949e; font-size: 0.88rem;">STATUS: READY ON LAUNCH PAD</span>
                 <button class="btn-primary" onclick="launchCompetitiveRace()">🚀 LAUNCH HEAD-TO-HEAD RACE</button>
             </div>
             <canvas id="raceCanvas" width="1100" height="260"></canvas>
@@ -509,7 +516,6 @@
             const mass = p.mass + cm.mass + ins.mass + shield * 5;
             const effectiveCap = Math.min(c.maxMass, l.cap);
 
-            // Solar inverse-square degradation at target
             const pwrKey = document.getElementById(`${prefix}-power`).value;
             const deliveredPwr = pwrKey === 'Solar' ? Math.round(p.pwr * Math.max(0.2, 1 - (c.distAU / 10))) : p.pwr;
 
@@ -607,7 +613,6 @@
             document.getElementById('race-status').innerText = "STATUS: CONTRACT EVALUATION COMPLETE";
         }
 
-        // --- FIREBASE SYNC FOR COMPETITIVE ROOMS ---
         function createCompetitiveRoom() {
             compRoom = Math.floor(1000 + Math.random() * 9000).toString();
             document.getElementById('comp-room-status').innerText = `ACTIVE ROOM CODE: ${compRoom}`;
@@ -680,7 +685,6 @@
             });
         }
 
-        // --- RACE CANVAS RENDERER ---
         const rCanvas = document.getElementById('raceCanvas');
         const rCtx = rCanvas.getContext('2d');
 
@@ -697,14 +701,12 @@
             const laneA = 85;
             const laneO = 185;
 
-            // Track Lines
             rCtx.setLineDash([5, 5]);
             rCtx.strokeStyle = '#30363d';
             rCtx.beginPath(); rCtx.moveTo(startX, laneA); rCtx.lineTo(endX, laneA); rCtx.stroke();
             rCtx.beginPath(); rCtx.moveTo(startX, laneO); rCtx.lineTo(endX, laneO); rCtx.stroke();
             rCtx.setLineDash([]);
 
-            // Earth Start Nodes
             [laneA, laneO].forEach(y => {
                 rCtx.beginPath();
                 rCtx.arc(startX, y, 14, 0, Math.PI * 2);
@@ -712,7 +714,6 @@
                 rCtx.fill();
             });
 
-            // Target Finish Nodes
             [laneA, laneO].forEach(y => {
                 rCtx.beginPath();
                 rCtx.arc(endX, y, 16, 0, Math.PI * 2);
@@ -721,20 +722,17 @@
             });
 
             rCtx.fillStyle = '#8b949e';
-            rCtx.font = '12px monospace';
+            rCtx.font = '12px sans-serif';
             rCtx.fillText('EARTH', startX - 18, 35);
             rCtx.fillText(c.target.toUpperCase(), endX - 45, 35);
 
-            // Spacecraft Positions
             const ax = startX + (endX - startX) * alphaProg;
             const ox = startX + (endX - startX) * omegaProg;
 
-            // Draw Team Alpha Craft
             rCtx.fillStyle = '#58a6ff';
             rCtx.fillRect(ax - 10, laneA - 7, 20, 14);
             rCtx.fillText(`${alphaData.name || 'ALPHA'} (${Math.round(alphaProg * 100)}%)`, ax - 30, laneA - 16);
 
-            // Draw Team Omega Craft
             rCtx.fillStyle = '#f0883e';
             rCtx.fillRect(ox - 10, laneO - 7, 20, 14);
             rCtx.fillText(`${omegaData.name || 'OMEGA'} (${Math.round(omegaProg * 100)}%)`, ox - 30, laneO - 16);
@@ -750,7 +748,6 @@
             requestAnimationFrame(drawRace);
         }
 
-        // Background Starfield
         const bg = document.getElementById('bgCanvas');
         const bctx = bg.getContext('2d');
         bg.width = window.innerWidth;
