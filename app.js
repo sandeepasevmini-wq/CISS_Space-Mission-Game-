@@ -1816,6 +1816,65 @@ function runGameLoader() {
             audioLoader.pause();
             audioLoader.currentTime = 0;
 
+// --- HOW TO PLAY TUTORIAL SCROLL VALIDATION ---
+function checkTutorialScroll() {
+    const scrollBox = document.getElementById('tutorial-scroll-box');
+    const acceptBtn = document.getElementById('accept-mission-btn');
+    
+    if (!scrollBox || !acceptBtn) return;
+
+    // Check if scrolled within 5 pixels of the bottom
+    const isAtBottom = scrollBox.scrollHeight - scrollBox.scrollTop <= scrollBox.clientHeight + 5;
+
+    if (isAtBottom) {
+        acceptBtn.disabled = false;
+        acceptBtn.style.background = '#238636';
+        acceptBtn.style.borderColor = '#2ea043';
+        acceptBtn.style.color = '#ffffff';
+        acceptBtn.style.cursor = 'pointer';
+        acceptBtn.style.boxShadow = '0 0 15px rgba(35, 134, 54, 0.4)';
+        acceptBtn.innerText = '🚀 ACCEPT MISSION & DEPLOY';
+    }
+}
+
+function acceptHowToPlay() {
+    const tutorialModal = document.getElementById('how-to-play-modal');
+    if (tutorialModal) {
+        tutorialModal.style.display = 'none';
+    }
+    
+    // Now open the Mission Deployment modal (your second image)
+    const welcomeModal = document.getElementById('welcome-modal');
+    if (welcomeModal) {
+        welcomeModal.style.display = 'flex';
+    }
+}
+
+// Modify your loader finish block inside runGameLoader() to trigger this modal first:
+// REPLACE THIS PART in runGameLoader():
+/*
+    setTimeout(() => {
+        if (loaderScreen) {
+            loaderScreen.style.opacity = '0';
+            loaderScreen.style.visibility = 'hidden';
+        }
+        
+        audioAmbient.play().catch(() => {});
+
+        const welcomeModal = document.getElementById('welcome-modal');
+        if (welcomeModal) {
+            welcomeModal.style.display = 'flex';
+        }
+    }, 500);
+*/
+
+// WITH THIS:
+        if (progress >= 100) {
+            clearInterval(interval);
+            
+            audioLoader.pause();
+            audioLoader.currentTime = 0;
+
             setTimeout(() => {
                 if (loaderScreen) {
                     loaderScreen.style.opacity = '0';
@@ -1824,9 +1883,13 @@ function runGameLoader() {
                 
                 audioAmbient.play().catch(() => {});
 
-                const welcomeModal = document.getElementById('welcome-modal');
-                if (welcomeModal) {
-                    welcomeModal.style.display = 'flex';
+                // Open How To Play Tutorial Modal first before Deployment Modal
+                const tutorialModal = document.getElementById('how-to-play-modal');
+                if (tutorialModal) {
+                    tutorialModal.style.display = 'flex';
+                    // Reset scroll position in case of replay
+                    const scrollBox = document.getElementById('tutorial-scroll-box');
+                    if (scrollBox) scrollBox.scrollTop = 0;
                 }
             }, 500);
         }
