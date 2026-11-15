@@ -182,6 +182,8 @@ let anomalyTriggered = false;
 let anomalyResolved = false;
 let currentActiveChallenge = null;
 
+let isFlightPaused = false; // Flag to halt transit during anomalies for Medium mode
+
 // High Score Persistence
 let highScore = localStorage.getItem('space_architect_highscore') || 0;
 const highScoreElem = document.getElementById('high-score-val');
