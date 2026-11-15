@@ -2,7 +2,10 @@
 body {
     background-color: #020408;
     color: #c9d1d9;
+    /* Clean, highly readable sans-serif font stack for general UI and paragraphs */
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    letter-spacing: 0.3px; /* Added for cleaner character separation */
+    line-height: 1.6;     /* Added for easier paragraph reading */
     margin: 0;
     padding: 20px;
     display: flex;
@@ -55,6 +58,7 @@ header {
 
 header h1 {
     color: #58a6ff;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 1.6rem;
     letter-spacing: 2px;
     margin: 0;
@@ -187,6 +191,7 @@ select, input[type="range"] {
     border-radius: 4px;
     box-sizing: border-box;
     font-size: 0.85rem;
+    font-family: inherit; /* Inherits the cleaner sans-serif font */
 }
 
 button.launch-btn {
