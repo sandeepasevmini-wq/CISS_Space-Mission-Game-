@@ -156,6 +156,45 @@
         <div class="modal-content" style="background: #0d1117; border: 1px solid #30363d; padding: 30px; border-radius: 8px; max-width: 600px; text-align: center; box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);">
             <h1 style="color: #58a6ff; margin-bottom: 10px; margin-top: 0;">MISSION DEPLOYMENT</h1>
             <p style="color: #8b949e; margin-bottom: 30px;">Select your deployment configuration.</p>
+
+<!-- HOW TO PLAY TUTORIAL MODAL -->
+    <div id="how-to-play-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 4, 8, 0.92); display: none; align-items: center; justify-content: center; z-index: 2100; font-family: monospace;">
+        <div class="modal-content" style="background: #0d1117; border: 1px solid #30363d; padding: 30px; border-radius: 8px; max-width: 650px; width: 90%; text-align: left; box-shadow: 0 0 25px rgba(88, 166, 255, 0.25); display: flex; flex-direction: column; max-height: 85vh;">
+            <h1 style="color: #58a6ff; margin-bottom: 5px; margin-top: 0; font-size: 1.4rem; text-align: center;">📖 HOW TO PLAY: MISSION BRIEFING</h1>
+            <p style="color: #8b949e; margin-bottom: 15px; font-size: 0.8rem; text-align: center;">Scroll through the complete briefing to unlock mission acceptance.</p>
+            
+            <!-- SCROLLABLE INSTRUCTION CONTAINER -->
+            <div id="tutorial-scroll-box" onscroll="checkTutorialScroll()" style="overflow-y: auto; max-height: 400px; padding-right: 12px; border: 1px solid #21262d; background: #161b22; border-radius: 6px; padding: 15px; font-size: 0.85rem; line-height: 1.6;">
+                <h3 style="color: #58a6ff; margin-top: 0;">1. MISSION OBJECTIVES &amp; DESTINATIONS</h3>
+                <p>Select your destination wisely between <strong>Europa</strong> (Jupiter), <strong>Titan</strong> (Saturn), or <strong>16 Psyche</strong> (Asteroid Belt). Each moon or asteroid imposes distinct engineering hurdles, such as intense Jovian radiation belts, cryogenic nitrogen atmospheres, or metallic core magnetic anomalies.</p>
+                
+                <h3 style="color: #58a6ff;">2. DEPLOYMENT MODES</h3>
+                <p>Choose between <strong>Solo Flight</strong> or <strong>Team Mode</strong> (supporting a maximum of <strong>4 players</strong>). In Team Mode, synchronize with your crew via Firebase and divide responsibilities across four specialized crew roles:</p>
+                <ul style="margin: 5px 0 15px 20px; color: #8b949e; padding: 0;">
+                    <li><strong>Commander (CMD):</strong> Budget credits, difficulty tier, and launch vehicle control.</li>
+                    <li><strong>Lead Engineer (ENG):</strong> Power generators (Solar vs. RTG) and radiation shielding.</li>
+                    <li><strong>Chief Scientist (SCI):</strong> Target destination and scientific payload instruments.</li>
+                    <li><strong>Flight Director (FD):</strong> Interplanetary route trajectory and communications antenna.</li>
+                </ul>
+
+                <h3 style="color: #58a6ff;">3. RESOURCE MANAGEMENT &amp; TRADE-OFFS</h3>
+                <p>Every engineering choice has consequences. Upgrading instruments or adding shielding increases payload mass and budget costs. Ensure your spacecraft stays under mass limits and within your selected difficulty budget ($1,500M Cadet, $1,000M Commander, or $750M Architect).</p>
+
+                <h3 style="color: #58a6ff;">4. 3D HANGAR &amp; INTERPLANETARY TRANSIT</h3>
+                <p>Inspect your spacecraft in real time using the <strong>Realistic 3D WebGL Hangar</strong> (click and drag to rotate). Monitor real-time telemetry, power draws, data throughput, and fuel consumption along the <strong>Mission Viz Interplanetary Trajectory Map</strong> during transit.</p>
+
+                <h3 style="color: #58a6ff;">5. MID-FLIGHT ANOMALIES &amp; DEBRIEFS</h3>
+                <p>Handle destination-specific emergency anomalies mid-flight by coordinating tactical choices with your team. Complete missions to generate diagnostic optimization reports, transmission records for the <strong>Global Hall of Fame</strong>, and shareable comparisons (`compare.html`).</p>
+                
+                <p style="color: #2ea043; font-weight: bold; text-align: center; margin-top: 20px;">↓ You have reached the end of the briefing briefing. Accept mission below! ↓</p>
+            </div>
+
+            <!-- ACCEPT MISSION BUTTON (Initially Disabled) -->
+            <button id="accept-mission-btn" onclick="acceptHowToPlay(); playClick();" disabled style="margin-top: 20px; background: #21262d; border: 1px solid #30363d; color: #484f58; padding: 12px; border-radius: 4px; font-weight: bold; cursor: not-allowed; font-family: monospace; letter-spacing: 1px; width: 100%; transition: all 0.3s ease;">
+                🔒 SCROLL TO BOTTOM TO ACCEPT MISSION
+            </button>
+        </div>
+    </div>
             
             <!-- Main Choice -->
             <div id="lobby-main" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px;">
