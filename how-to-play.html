@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Play — CISS Space Mission Systems Architect</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230d1117' stroke='%2358a6ff' stroke-width='8'/%3E%3Ccircle cx='50' cy='50' r='25' fill='none' stroke='%23f85149' stroke-width='6'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2358a6ff'/%3E%3C/svg%3E">
+    <style>
+        :root {
+            --bg-deep: #04070d;
+            --bg-panel: #0d1117;
+            --bg-card: #161b22;
+            --bg-card-hover: #1c222b;
+            --border: #30363d;
+            --text-main: #e6edf3;
+            --text-muted: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #2ea043;
+            --accent-amber: #f0a500;
+            --accent-purple: #a78bfa;
+            --accent-red: #f85149;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: "Courier New", Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.65;
+            overflow-x: hidden;
+        }
+
+        /* Subtle Starfield Background Canvas */
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Sticky Navigation Bar */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13, 17, 23, 0.88);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-mono);
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: var(--accent-blue);
+            letter-spacing: 0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 5px;
+            transition: 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #ffffff;
+            background: rgba(88, 166, 255, 0.12);
+        }
+
+        .btn-back {
+            background: var(--accent-green);
+            color: #ffffff !important;
+            font-family: var(--font-mono);
+            font-weight: 700 !important;
+            padding: 6px 14px !important;
+            border-radius: 6px;
+        }
+
+        .btn-back:hover {
+            background: #238636 !important;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 36px 20px 80px;
+        }
+
+        /* Hero Banner */
+        .hero {
+            text-align: center;
+            padding: 48px 24px;
+            background: radial-gradient(circle at top, rgba(88, 166, 255, 0.14), rgba(13, 17, 23, 0.9) 70%);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 48px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+        }
+
+        .hero-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--accent-blue);
+            background: rgba(88, 166, 255, 0.12);
+            border: 1px solid rgba(88, 166, 255, 0.35);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 14px;
+            letter-spacing: 1px;
+        }
+
+        .hero h1 {
+            margin: 0 0 14px;
+            font-size: clamp(1.8rem, 4vw, 2.7rem);
+            color: #ffffff;
+            letter-spacing: -0.5px;
+        }
+
+        .hero p {
+            max-width: 720px;
+            margin: 0 auto 28px;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        /* 4-Step Quick Workflow */
+        .quick-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 14px;
+            text-align: left;
+            margin-top: 24px;
+        }
+
+        .step-pill {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .step-num {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent-green);
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .step-pill strong {
+            display: block;
+            color: #ffffff;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .step-pill span {
+            font-size: 0.83rem;
+            color: var(--text-muted);
+        }
+
+        /* Section Headings */
+        section {
+            margin-bottom: 56px;
+        }
+
+        .section-header {
+            margin-bottom: 24px;
+            border-left: 4px solid var(--accent-blue);
+            padding-left: 14px;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.65rem;
+            color: #ffffff;
+        }
+
+        .section-header p {
+            margin: 4px 0 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 22px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 24px;
+        }
+
+        /* Standard Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(88, 166, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tag {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .tag-blue { background: rgba(88, 166, 255, 0.15); color: var(--accent-blue); border: 1px solid rgba(88, 166, 255, 0.3); }
+        .tag-green { background: rgba(46, 160, 67, 0.15); color: #3fb950; border: 1px solid rgba(46, 160, 67, 0.3); }
+        .tag-amber { background: rgba(240, 165, 0, 0.15); color: var(--accent-amber); border: 1px solid rgba(240, 165, 0, 0.3); }
+        .tag-purple { background: rgba(167, 139, 250, 0.15); color: var(--accent-purple); border: 1px solid rgba(167, 139, 250, 0.3); }
+        .tag-red { background: rgba(248, 81, 73, 0.15); color: var(--accent-red); border: 1px solid rgba(248, 81, 73, 0.3); }
+
+        .feature-list {
+            padding-left: 18px;
+            margin: 12px 0 0;
+            color: #c9d1d9;
+            font-size: 0.92rem;
+        }
+
+        .feature-list li {
+            margin-bottom: 8px;
+        }
+
+        /* Destination Showcase Cards with Portrait Images */
+        .dest-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+
+        .dest-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .dest-img-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            overflow: hidden;
+            background: #020408;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dest-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            transition: transform 0.5s ease;
+        }
+
+        .dest-card:hover .dest-img-wrapper img {
+            transform: scale(1.04);
+        }
+
+        .dest-overlay-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .dest-distance-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(13, 17, 23, 0.88);
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 3px 9px;
+            border-radius: 6px;
+        }
+
+        .dest-body {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .dest-body h3 {
+            margin: 0 0 6px;
+            font-size: 1.25rem;
+            color: #ffffff;
+        }
+
+        .dest-goal {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .req-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: var(--bg-panel);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+        }
+
+        .req-item span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+
+        .req-item strong {
+            color: #ffffff;
+        }
+
+        /* Subsystem Tables / Cards */
+        .subsystem-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .subsystem-card h3 {
+            margin: 0 0 12px;
+            font-size: 1.1rem;
+            color: var(--accent-blue);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 10px 0;
+            border-bottom: 1px dashed rgba(48, 54, 61, 0.7);
+            gap: 12px;
+        }
+
+        .spec-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .spec-title {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 0.92rem;
+        }
+
+        .spec-desc {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        .spec-stats {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            text-align: right;
+            white-space: nowrap;
+            color: #3fb950;
+        }
+
+        /* Callout Tip Box */
+        .tip-box {
+            background: rgba(88, 166, 255, 0.08);
+            border: 1px solid rgba(88, 166, 255, 0.35);
+            border-left: 4px solid var(--accent-blue);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-top: 20px;
+            font-size: 0.92rem;
+        }
+
+        /* AI Chatbot Section */
+        .chatbot-wrapper {
+            background: var(--bg-panel);
+            border: 1px solid var(--accent-blue);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 35px rgba(88, 166, 255, 0.12);
+        }
+
+        .chat-header {
+            background: linear-gradient(90deg, #161b22, #1b2636);
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .chat-header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #2ea043;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #2ea043;
+        }
+
+        .chat-messages {
+            height: 360px;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background: #080c12;
+        }
+
+        .msg {
+            max-width: 82%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            line-height: 1.55;
+            animation: fadeIn 0.25s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-bot {
+            align-self: flex-start;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-bottom-left-radius: 3px;
+        }
+
+        .msg-bot strong {
+            color: var(--accent-blue);
+        }
+
+        .msg-user {
+            align-self: flex-end;
+            background: #1f6feb;
+            color: #ffffff;
+            border-bottom-right-radius: 3px;
+        }
+
+        .quick-prompts {
+            padding: 12px 20px;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .prompt-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            padding: 5px 11px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .prompt-chip:hover {
+            border-color: var(--accent-blue);
+            color: #ffffff;
+            background: rgba(88, 166, 255, 0.12);
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            gap: 10px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #ffffff;
+            font-size: 0.92rem;
+            outline: none;
+        }
+
+        .chat-input-area input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .chat-input-area button {
+            background: var(--accent-blue);
+            color: #04070d;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .chat-input-area button:hover {
+            background: #79c0ff;
+        }
+
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 640px) {
+            .msg { max-width: 92%; }
+            .top-nav { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+
+<!-- STICKY TOP NAVIGATION -->
+<nav class="top-nav">
+    <div class="brand">🛰️ CISS MISSION ARCHITECT // FIELD MANUAL</div>
+    <div class="nav-links">
+        <a href="#modes">Game Modes</a>
+        <a href="#destinations">Destinations</a>
+        <a href="#subsystems">Spacecraft Parts</a>
+        <a href="#difficulty">Difficulty & Anomalies</a>
+        <a href="#scoring">Scoring & Reports</a>
+        <a href="#ai-assistant">Ask AI</a>
+        <a href="index.html?skipLoader=true" class="btn-back">← Launch Control</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- HERO SECTION -->
+    <div class="hero">
+        <div class="hero-badge">CEYLON INSTITUTE OF SPACE SCIENCE • FLIGHT MANUAL</div>
+        <h1>How to Play: Space Mission Systems Architect</h1>
+        <p>Design, budget, and launch real interplanetary probes across the Solar System. Balance mass, power, radiation shielding, and communications to survive deep-space hazards and maximize your Science Yield.</p>
+
+        <div class="quick-steps">
+            <div class="step-pill">
+                <span class="step-num">STEP 01 // SELECT</span>
+                <strong>Pick Mode & Target</strong>
+                <span>Choose Competitive or Sandbox, Solo or Team, and select your target world.</span>
+            </div>
+            <div class="step-pill">
+                <span class="step-num">STEP 02 // ENGINEER</span>
+                <strong>Build Your Probe</strong>
+                <span>Equip a rocket, power source, antenna, science sensor, and radiation shield.</span>
+            </div>
+            <div class="step-pill">
+                <span class="step-num">STEP 03 // LAUNCH</span>
+                <strong>Survive Deep Space</strong>
+                <span>Monitor live fuel, solar drop-off, and handle mid-flight emergencies.</span>
+            </div>
+            <div class="step-pill">
+                <span class="step-num">STEP 04 // ANALYZE</span>
+                <strong>Score & Compare</strong>
+                <span>Earn S–F grades, download debrief reports, and climb the Global Leaderboard.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 1: COMPETITIVE VS SANDBOX & SOLO VS TEAM -->
+    <section id="modes">
+        <div class="section-header">
+            <h2>1. Game Modes & Crew Operations</h2>
+            <p>Understand the difference between Competitive Missions, Sandbox Testing, Solo Flight, and 4-Player Team Mode.</p>
+        </div>
+
+        <div class="grid-2">
+            <!-- Competitive Mode -->
+            <div class="card">
+                <h3>🏆 Competitive Mode <span class="tag tag-amber">Ranked</span></h3>
+                <p style="color: var(--text-muted); font-size: 0.92rem;">The official mission simulation where every dollar, kilogram, and engineering decision counts toward your rank.</p>
+                <ul class="feature-list">
+                    <li><strong>Strict Constraints:</strong> You must stay strictly within your difficulty tier's budget cap ($750M–$1500M) and rocket payload mass limit (1,500 kg or 3,000 kg).</li>
+                    <li><strong>Real Consequences:</strong> Under-equipping power, shielding, or bandwidth causes mission failure upon arrival.</li>
+                    <li><strong>Global Leaderboard Eligible:</strong> Successful missions can be uploaded with your Callsign and Country Flag to compete worldwide.</li>
+                    <li><strong>Score Optimization:</strong> Unused budget converts directly into bonus score points!</li>
+                </ul>
+            </div>
+
+            <!-- Sandbox Mode -->
+            <div class="card">
+                <h3>🧪 Sandbox Mode <span class="tag tag-purple">Free Lab</span></h3>
+                <p style="color: var(--text-muted); font-size: 0.92rem;">An open engineering playground designed for experimentation, learning subsystem trade-offs, and testing wild spacecraft builds.</p>
+                <ul class="feature-list">
+                    <li><strong>Pressure-Free Testing:</strong> Experiment with heavy SLS rockets, Laser Comms, and maximum radiation shielding without worrying about leaderboard penalties.</li>
+                    <li><strong>3D Hangar Inspection:</strong> Visually see how every part changes your spacecraft's 3D geometry in real time.</li>
+                    <li><strong>Trajectory & Telemetry Practice:</strong> Test how Direct vs. Gravity Assist routes affect transit speed and solar power decay over distance.</li>
+                    <li><strong>Great for Training:</strong> Use Sandbox to prototype designs before taking them into Architect difficulty in Competitive Mode.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Solo vs Multiplayer Team Mode -->
+        <div class="card" style="margin-top: 22px;">
+            <h3>👥 Solo Commander vs. 4-Player Team Mode <span class="tag tag-blue">Live Co-Op</span></h3>
+            <p style="color: var(--text-muted); font-size: 0.92rem;">Play solo with full control over all systems, or Host/Join a 4-digit room code with friends where each player controls specific subsystems:</p>
+            <div class="grid-2" style="margin-top: 14px;">
+                <div style="background: var(--bg-panel); padding: 14px; border-radius: 8px; border: 1px solid var(--border);">
+                    <strong style="color: var(--accent-blue);">🎖️ Commander (CMD)</strong> — Controls Target, Difficulty & Launch Vehicle. Bonus goal: Keep at least <strong>$150M</strong> unspent.<br><br>
+                    <strong style="color: #3fb950;">⚙️ Lead Engineer (ENG)</strong> — Controls Power System & Radiation Shielding. Bonus goal: Keep total mass <strong>≤ 1,000 kg</strong>.
+                </div>
+                <div style="background: var(--bg-panel); padding: 14px; border-radius: 8px; border: 1px solid var(--border);">
+                    <strong style="color: var(--accent-purple);">🔬 Chief Scientist (SCI)</strong> — Controls Target & Science Instrument. Bonus goal: Equip <strong>Radar or Spectrometer</strong>.<br><br>
+                    <strong style="color: var(--accent-amber);">📡 Flight Director (FD)</strong> — Controls Flight Route & Comms Antenna. Bonus goal: Achieve <strong>≥ 500 kbps</strong> uplink.
+                </div>
+            </div>
+            <div class="tip-box">
+                💡 <strong>Team Synergy Bonus:</strong> Meeting all 4 crew role goals awards <strong>+500 PTS</strong>! Meeting 2–3 awards <strong>+150 PTS</strong>, while meeting 0–1 incurs a <strong>-200 PTS</strong> penalty.
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: DESTINATIONS (FEATURING USER IMAGES) -->
+    <section id="destinations">
+        <div class="section-header">
+            <h2>2. Target Destinations & Survival Requirements</h2>
+            <p>Each celestial body has strict minimum survival thresholds. Meet all three numbers or your probe will fail!</p>
+        </div>
+
+        <div class="grid-3">
+            <!-- EUROPA CARD -->
+            <div class="dest-card">
+                <div class="dest-img-wrapper">
+                    <img src="spacecraft-E.jpeg" onerror="this.onerror=null; this.src='images/spacecraft-E.jpeg';" alt="Spacecraft orbiting Jupiter and Europa">
+                    <div class="dest-overlay-badge">⚠️ HIGH RADIATION</div>
+                    <div class="dest-distance-badge">5.2 AU</div>
+                </div>
+                <div class="dest-body">
+                    <div>
+                        <h3>Europa (Jupiter)</h3>
+                        <p class="dest-goal">Confirm the subsurface liquid ocean and search for biosignatures inside Jupiter's intense radiation belts.</p>
+                    </div>
+                    <div class="req-grid">
+                        <div class="req-item"><span>MIN POWER</span><strong>350 W</strong></div>
+                        <div class="req-item"><span>MIN SHIELDING</span><strong style="color: var(--accent-red);">80% (Critical)</strong></div>
+                        <div class="req-item"><span>MIN COMMS</span><strong>100 kbps</strong></div>
+                        <div class="req-item"><span>BEST POWER</span><strong>Nuclear RTG</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TITAN CARD -->
+            <div class="dest-card">
+                <div class="dest-img-wrapper">
+                    <img src="spacecraft-T.jpeg" onerror="this.onerror=null; this.src='images/spacecraft-T.jpeg';" alt="Spacecraft flying past Saturn's rings toward Titan">
+                    <div class="dest-overlay-badge">❄️ DEEP SPACE COLD</div>
+                    <div class="dest-distance-badge">9.5 AU</div>
+                </div>
+                <div class="dest-body">
+                    <div>
+                        <h3>Titan (Saturn)</h3>
+                        <p class="dest-goal">Penetrate dense nitrogen haze and map liquid hydrocarbon seas at the edge of the outer Solar System.</p>
+                    </div>
+                    <div class="req-grid">
+                        <div class="req-item"><span>MIN POWER</span><strong style="color: var(--accent-amber);">500 W (High)</strong></div>
+                        <div class="req-item"><span>MIN SHIELDING</span><strong>40%</strong></div>
+                        <div class="req-item"><span>MIN COMMS</span><strong>50 kbps</strong></div>
+                        <div class="req-item"><span>BEST POWER</span><strong>Nuclear RTG</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 16 PSYCHE CARD -->
+            <div class="dest-card">
+                <div class="dest-img-wrapper">
+                    <img src="spacecraft-P.jpeg" onerror="this.onerror=null; this.src='images/spacecraft-P.jpeg';" alt="Spacecraft navigating the asteroid belt toward 16 Psyche">
+                    <div class="dest-overlay-badge">🪨 METALLIC CORE</div>
+                    <div class="dest-distance-badge">3.0 AU</div>
+                </div>
+                <div class="dest-body">
+                    <div>
+                        <h3>16 Psyche Asteroid</h3>
+                        <p class="dest-goal">Navigate the main asteroid belt to map a exposed nickel-iron planetary core and magnetic anomalies.</p>
+                    </div>
+                    <div class="req-grid">
+                        <div class="req-item"><span>MIN POWER</span><strong>250 W</strong></div>
+                        <div class="req-item"><span>MIN SHIELDING</span><strong>30%</strong></div>
+                        <div class="req-item"><span>MIN COMMS</span><strong>40 kbps</strong></div>
+                        <div class="req-item"><span>BEST POWER</span><strong>RTG or Solar</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: SPACECRAFT SUBSYSTEMS -->
+    <section id="subsystems">
+        <div class="section-header">
+            <h2>3. Spacecraft Engineering & Subsystems</h2>
+            <p>Every part adds cost and mass. Watch your Budget and Mass gauges turn green before launching.</p>
+        </div>
+
+        <div class="grid-2">
+            <!-- Launch Vehicles & Routes -->
+            <div class="subsystem-card">
+                <h3>🚀 Launch Vehicle & Flight Trajectory</h3>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Falcon Heavy</div>
+                        <div class="spec-desc">Affordable workhorse for lightweight, efficient probes.</div>
+                    </div>
+                    <div class="spec-stats">$150M<br>Max 1,500 kg</div>
+                </div>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Space Launch System (SLS)</div>
+                        <div class="spec-desc">Super-heavy rocket for massive payloads & heavy shielding.</div>
+                    </div>
+                    <div class="spec-stats">$800M<br>Max 3,000 kg</div>
+                </div>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Direct Route vs. Gravity Assist</div>
+                        <div class="spec-desc"><strong>Direct</strong> flies fast. <strong>Gravity Assist</strong> takes longer in transit but saves <strong>$50M</strong> in fuel/launch budget!</div>
+                    </div>
+                    <div class="spec-stats">Direct: $0<br>Assist: -$50M</div>
+                </div>
+            </div>
+
+            <!-- Power & Shielding -->
+            <div class="subsystem-card">
+                <h3>⚡ Power & Radiation Shielding</h3>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Solar Arrays</div>
+                        <div class="spec-desc">Cheap, but sunlight weakens dramatically far from the Sun (drops below 350W at Europa & Titan!).</div>
+                    </div>
+                    <div class="spec-stats">$50M • 200 kg<br>200W Base</div>
+                </div>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Nuclear RTG</div>
+                        <div class="spec-desc">Radioisotope generator providing constant 600W regardless of distance from the Sun.</div>
+                    </div>
+                    <div class="spec-stats">$200M • 150 kg<br>600W Constant</div>
+                </div>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Radiation Shielding Slider (0%–100%)</div>
+                        <div class="spec-desc">Protects avionics from Jovian radiation. Every <strong>1%</strong> costs <strong>$2M</strong> and weighs <strong>5 kg</strong>.</div>
+                    </div>
+                    <div class="spec-stats">$2M / 1%<br>5 kg / 1%</div>
+                </div>
+            </div>
+
+            <!-- Communications -->
+            <div class="subsystem-card">
+                <h3>📡 Communications Antennas</h3>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Low-Gain Antenna (LGA)</div>
+                        <div class="spec-desc">Basic omni-directional rod. Too slow for Europa, Titan, or Psyche (causes Comms Failure).</div>
+                    </div>
+                    <div class="spec-stats">$20M • 50 kg<br>10 kbps</div>
+                </div>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">High-Gain Dish (HGA)</div>
+                        <div class="spec-desc">Reliable parabolic dish. Handles all destinations and instruments smoothly.</div>
+                    </div>
+                    <div class="spec-stats">$80M • 120 kg<br>500 kbps</div>
+                </div>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Laser Optical Comms</div>
+                        <div class="spec-desc">Ultra-fast deep-space laser link. Lightweight and eliminates any data bottleneck.</div>
+                    </div>
+                    <div class="spec-stats">$180M • 80 kg<br>5,000 kbps</div>
+                </div>
+            </div>
+
+            <!-- Scientific Instruments -->
+            <div class="subsystem-card">
+                <h3>🔬 Scientific Payload Instruments</h3>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Imaging Camera</div>
+                        <div class="spec-desc">Lightweight optical camera. Needs at least 50 kbps bandwidth.</div>
+                    </div>
+                    <div class="spec-stats">$40M • 60 kg<br>50 Base PTS</div>
+                </div>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Spectrometer</div>
+                        <div class="spec-desc">Analyzes chemical & atmospheric composition. Needs 250 kbps.</div>
+                    </div>
+                    <div class="spec-stats">$110M • 100 kg<br>90 Base PTS</div>
+                </div>
+                <div class="spec-row">
+                    <div>
+                        <div class="spec-title">Subsurface Radar</div>
+                        <div class="spec-desc">Highest science yield! Maps underground oceans/cores. Needs 400 kbps.</div>
+                    </div>
+                    <div class="spec-stats">$150M • 220 kg<br>120 Base PTS</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: DIFFICULTY TIERS & ANOMALIES -->
+    <section id="difficulty">
+        <div class="section-header">
+            <h2>4. Difficulty Tiers & Mid-Flight Anomalies</h2>
+            <p>Higher difficulty levels shrink your budget and change how mid-flight space emergencies behave.</p>
+        </div>
+
+        <div class="grid-3">
+            <div class="card">
+                <h3>🟢 Cadet (Easy) <span class="tag tag-green">$1,500M</span></h3>
+                <ul class="feature-list">
+                    <li><strong>Generous Budget:</strong> $1,500M allows you to afford top-tier parts easily.</li>
+                    <li><strong>Smooth Transit:</strong> <strong>No mid-flight anomalies</strong> occur during your journey.</li>
+                    <li>Ideal for first-time pilots learning orbital mechanics.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>🟡 Commander (Medium) <span class="tag tag-amber">$1,000M</span></h3>
+                <ul class="feature-list">
+                    <li><strong>Balanced Budget:</strong> $1,000M requires smart trade-offs between cost and performance.</li>
+                    <li><strong>Tactical Pause Anomalies:</strong> Around halfway through transit, an emergency alert triggers and <strong>pauses your spacecraft</strong> until you choose a response protocol.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>🔴 Architect (Hard) <span class="tag tag-red">$750M</span></h3>
+                <ul class="feature-list">
+                    <li><strong>Tight Budget:</strong> Only $750M—requires Gravity Assist or lean engineering.</li>
+                    <li><strong>Real-Time Anomalies:</strong> Transit <strong>does NOT pause</strong> during an emergency! React before reaching the target or take a <strong>-200 PTS</strong> penalty.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5: SCORING, REPORTS & LEADERBOARD -->
+    <section id="scoring">
+        <div class="section-header">
+            <h2>5. Scoring Formula, Reports & Mission Comparison</h2>
+            <p>How your final Mission Grade (S, A, B, C, or F) is calculated and how to reach the top of the leaderboard.</p>
+        </div>
+
+        <div class="card">
+            <div class="grid-2">
+                <div>
+                    <h3>📊 How Points & Grades Work</h3>
+                    <ul class="feature-list">
+                        <li><strong>Base Science Score:</strong> <code>Instrument Points × 10 × Data Efficiency</code> (up to <strong>1,200 PTS</strong> with Subsurface Radar + HGA/Laser Comms).</li>
+                        <li><strong>Budget Efficiency Bonus:</strong> Every <strong>$1M unspent</strong> adds <strong>+1 PT</strong> directly to your final score!</li>
+                        <li><strong>Grade Thresholds:</strong>
+                            <br><span class="tag tag-purple">S-Grade</span> &gt; 1,200 PTS &nbsp;|&nbsp;
+                            <span class="tag tag-green">A-Grade</span> &gt; 900 PTS &nbsp;|&nbsp;
+                            <span class="tag tag-blue">B-Grade</span> Passing
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>📑 Post-Mission Tools</h3>
+                    <ul class="feature-list">
+                        <li><strong>Official CISS Mission Report:</strong> Generates a downloadable engineering debrief explaining why your mission succeeded or failed, with tailored upgrade advice.</li>
+                        <li><strong>Compare Missions (`compare.html`):</strong> Archives your runs so you can compare two spacecraft blueprints side-by-side.</li>
+                        <li><strong>Global Leaderboard:</strong> Filter top scores by destination and difficulty tier, and submit your personal best!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 6: INTERACTIVE AI MISSION ASSISTANT CHATBOT -->
+    <section id="ai-assistant">
+        <div class="section-header">
+            <h2>6. Ask A.R.I.E.S. — AI Mission Assistant</h2>
+            <p>Still have questions about a planet, part cost, game mode, or strategy? Ask the onboard AI right below!</p>
+        </div>
+
+        <div class="chatbot-wrapper">
+            <div class="chat-header">
+                <div class="chat-header-title">
+                    <div class="status-dot"></div>
+                    <strong style="font-family: var(--font-mono); color: #ffffff;">A.R.I.E.S. // CISS MISSION TACTICAL AI</strong>
+                </div>
+                <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">ONLINE • READY FOR QUERIES</span>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="msg msg-bot">
+                    <strong>A.R.I.E.S.:</strong> Greetings, Flight Architect! I am trained on every subsystem, destination threshold, game mode, and scoring rule in the CISS simulation. Ask me anything below or click a quick topic!
+                </div>
+            </div>
+
+            <div class="quick-prompts">
+                <button class="prompt-chip" onclick="askQuickQuestion('How do I beat Europa?')">How do I beat Europa?</button>
+                <button class="prompt-chip" onclick="askQuickQuestion('Competitive vs Sandbox mode?')">Competitive vs Sandbox?</button>
+                <button class="prompt-chip" onclick="askQuickQuestion('How do I get S-Rank?')">How do I get S-Rank?</button>
+                <button class="prompt-chip" onclick="askQuickQuestion('Why did my Solar Arrays fail?')">Why did Solar fail?</button>
+                <button class="prompt-chip" onclick="askQuickQuestion('How do anomalies work in each difficulty?')">Difficulty & Anomalies?</button>
+                <button class="prompt-chip" onclick="askQuickQuestion('How does 4-player Team Mode work?')">Team Mode Roles?</button>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask about Europa, Titan, Psyche, budgets, anomalies, S-Rank..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()">SEND</button>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        © 2026 Ceylon Institute of Space Science (CISS) • Space Mission Systems Architect Field Manual
+    </footer>
+</div>
+
+<script>
+    // --- SUBTLE ANIMATED STARFIELD BACKGROUND ---
+    const canvas = document.getElementById('starfield');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+
+    function initStars() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        stars = [];
+        for (let i = 0; i < 140; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 1.4 + 0.3,
+                alpha: Math.random(),
+                delta: (Math.random() * 0.015) + 0.003
+            });
+        }
+    }
+
+    function drawStars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let s of stars) {
+            s.alpha += s.delta;
+            if (s.alpha >= 1 || s.alpha <= 0.15) s.delta = -s.delta;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(180, 215, 255, ${s.alpha})`;
+            ctx.fill();
+        }
+        requestAnimationFrame(drawStars);
+    }
+
+    window.addEventListener('resize', initStars);
+    initStars();
+    drawStars();
+
+    // --- ONBOARD AI MISSION ASSISTANT KNOWLEDGE ENGINE ---
+    const knowledgeBase = [
+        {
+            keywords: ['europa', 'jupiter', 'radiation'],
+            answer: `<strong>Europa (Jupiter) Survival Guide (5.2 AU):</strong><br>
+            • <strong>Radiation Shielding:</strong> Must be at least <strong>80%</strong> ($160M, 400 kg) or Jupiter's radiation belts will destroy your electronics.<br>
+            • <strong>Power:</strong> Requires <strong>350W</strong> — equip the <strong>Nuclear RTG</strong> ($200M, 600W), because Solar Arrays drop too low at 5.2 AU.<br>
+            • <strong>Comms:</strong> Minimum <strong>100 kbps</strong> — use the <strong>High-Gain Dish (HGA)</strong> ($80M, 500 kbps) or Laser Comms.`
+        },
+        {
+            keywords: ['titan', 'saturn', 'haze', 'hydrocarbon'],
+            answer: `<strong>Titan (Saturn) Survival Guide (9.5 AU):</strong><br>
+            • <strong>Power:</strong> Requires <strong>500W</strong> — you <strong>must</strong> use the <strong>Nuclear RTG</strong> (600W).<br>
+            • <strong>Radiation Shielding:</strong> Minimum <strong>40%</strong> ($80M, 200 kg).<br>
+            • <strong>Comms:</strong> Minimum <strong>50 kbps</strong> — equip the <strong>HGA Dish</strong> (500 kbps) or Laser Comms.`
+        },
+        {
+            keywords: ['psyche', 'asteroid', '16 psyche', 'metal'],
+            answer: `<strong>16 Psyche Asteroid Guide (3.0 AU):</strong><br>
+            • <strong>Power:</strong> Requires <strong>250W</strong> (RTG is safest; Solar drops with distance).<br>
+            • <strong>Radiation Shielding:</strong> Minimum <strong>30%</strong> ($60M, 150 kg).<br>
+            • <strong>Comms:</strong> Minimum <strong>40 kbps</strong> — HGA Dish (500 kbps) works great.<br>
+            • <em>Tip:</em> Psyche has the lowest requirements, making it ideal for high-profit <strong>S-Rank</strong> speedruns!`
+        },
+        {
+            keywords: ['competitive', 'sandbox', 'difference', 'mode'],
+            answer: `<strong>Competitive vs. Sandbox Mode:</strong><br>
+            • <strong>Competitive Mode:</strong> Uses strict budget caps ($750M–$1500M), payload mass limits, difficulty anomalies, and lets you submit verified scores to the <strong>Global Leaderboard</strong>.<br>
+            • <strong>Sandbox Mode:</strong> A free-experimentation lab where you can test heavy rockets, inspect 3D spacecraft parts, and practice trajectories without competitive pressure.`
+        },
+        {
+            keywords: ['s-rank', 's grade', 'high score', 'points', 'score', 'grade', 'win'],
+            answer: `<strong>How to Achieve S-Grade (&gt; 1,200 PTS):</strong><br>
+            1. Equip <strong>Subsurface Radar</strong> (120 base science pts × 10 = 1,200 PTS).<br>
+            2. Pair it with <strong>HGA Dish</strong> (500 kbps) or <strong>Laser Comms</strong> (5,000 kbps) so there is zero data bottleneck (100% efficiency).<br>
+            3. Use <strong>Falcon Heavy</strong> ($150M) instead of SLS ($800M) and select <strong>Gravity Assist</strong> (-$50M) to save huge amounts of budget—every unspent <strong>$1M adds +1 PT</strong>!<br>
+            4. In 4-player Team Mode, hitting all 4 crew role bonuses adds <strong>+500 PTS</strong>!`
+        },
+        {
+            keywords: ['solar', 'rtg', 'power', 'watt', 'freeze', 'frozen'],
+            answer: `<strong>Why Solar Arrays Fail in Deep Space:</strong><br>
+            Solar Arrays start at 200W near Earth, and their power decays as your spacecraft travels farther from the Sun (3.0 AU to 9.5 AU). Because Europa requires 350W and Titan requires 500W, Solar Arrays will result in <em>Power Depletion</em>. Always choose the <strong>Nuclear RTG</strong> ($200M, 600W constant) for deep-space missions!`
+        },
+        {
+            keywords: ['anomaly', 'anomalies', 'difficulty', 'cadet', 'commander', 'architect', 'pause'],
+            answer: `<strong>Difficulty Tiers & Anomaly Rules:</strong><br>
+            • <strong>Cadet ($1,500M):</strong> No mid-flight anomalies occur.<br>
+            • <strong>Commander ($1,000M):</strong> An anomaly triggers mid-flight and <strong>automatically pauses transit</strong> until you pick Action 1 or Action 2.<br>
+            • <strong>Architect ($750M):</strong> Transit <strong>does NOT pause</strong> during anomalies! You must respond before reaching your target or suffer a <strong>-200 PTS</strong> penalty.`
+        },
+        {
+            keywords: ['team', 'multiplayer', 'role', 'roles', 'host', 'join', 'room'],
+            answer: `<strong>4-Player Team Mode & Crew Roles:</strong><br>
+            Click <em>Host Team</em> to generate a 4-digit room code or <em>Join Team</em> to enter one:<br>
+            • <strong>CMD (Commander):</strong> Target, Difficulty, Rocket (Bonus: ≥ $150M budget left)<br>
+            • <strong>ENG (Engineer):</strong> Power, Shielding (Bonus: ≤ 1,000 kg total mass)<br>
+            • <strong>SCI (Scientist):</strong> Target, Instrument (Bonus: Radar or Spectrometer)<br>
+            • <strong>FD (Flight Director):</strong> Route, Comms (Bonus: ≥ 500 kbps uplink)`
+        },
+        {
+            keywords: ['bottleneck', 'antenna', 'comms', 'kbps', 'lga', 'hga', 'laser'],
+            answer: `<strong>Communications & Data Bottlenecks:</strong><br>
+            Never use the <strong>LGA (10 kbps)</strong>—all targets require at least 40–100 kbps. Also match your antenna to your instrument:<br>
+            • Camera needs <strong>50 kbps</strong><br>
+            • Spectrometer needs <strong>250 kbps</strong><br>
+            • Radar needs <strong>400 kbps</strong><br>
+            <strong>HGA Dish (500 kbps, $80M)</strong> satisfies all instruments without bottleneck penalties!`
+        },
+        {
+            keywords: ['route', 'gravity', 'assist', 'direct', 'slow', 'speed'],
+            answer: `<strong>Direct vs. Gravity Assist Route:</strong><br>
+            • <strong>Direct Transfer:</strong> Fastest flight time, standard cost.<br>
+            • <strong>Gravity Assist Flyby:</strong> Slower transit speed, but saves <strong>$50M</strong> on your total mission cost—which also gives you +50 bonus score points!`
+        },
+        {
+            keywords: ['report', 'pdf', 'compare', 'leaderboard'],
+            answer: `<strong>Reports, Compare & Leaderboard:</strong><br>
+            • <strong>Mission Report:</strong> Click the report button after a mission to open a printable engineering debrief with failure root-cause analysis.<br>
+            • <strong>Compare Page:</strong> Automatically archives your mission blueprints so you can compare designs side-by-side.<br>
+            • <strong>Global Leaderboard:</strong> Enter your Callsign and Country Flag to submit any passing score (> 0 PTS) to the live leaderboard.`
+        }
+    ];
+
+    function getBotResponse(userText) {
+        const query = userText.toLowerCase().trim();
+        let bestMatch = null;
+        let highestScore = 0;
+
+        for (const item of knowledgeBase) {
+            let score = 0;
+            for (const kw of item.keywords) {
+                if (query.includes(kw)) score++;
+            }
+            if (score > highestScore) {
+                highestScore = score;
+                bestMatch = item.answer;
+            }
+        }
+
+        if (bestMatch) return bestMatch;
+
+        return `I can help with anything in <strong>Space Mission Systems Architect</strong>! Try asking about:<br>
+        • Target requirements for <strong>Europa</strong>, <strong>Titan</strong>, or <strong>16 Psyche</strong><br>
+        • <strong>Competitive vs. Sandbox</strong> mode or <strong>4-Player Team Roles</strong><br>
+        • <strong>Cadet, Commander, and Architect</strong> difficulty rules<br>
+        • How to reach <strong>S-Grade (&gt;1,200 PTS)</strong> or avoid <strong>Data Bottlenecks</strong>.`;
+    }
+
+    function appendMessage(htmlContent, sender) {
+        const container = document.getElementById('chat-messages');
+        const bubble = document.createElement('div');
+        bubble.className = `msg ${sender === 'user' ? 'msg-user' : 'msg-bot'}`;
+        bubble.innerHTML = sender === 'user' ? htmlContent : `<strong>A.R.I.E.S.:</strong> ${htmlContent}`;
+        container.appendChild(bubble);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function sendChatMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        // Escape basic HTML for user input
+        const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        appendMessage(safeText, 'user');
+        input.value = '';
+
+        setTimeout(() => {
+            const reply = getBotResponse(text);
+            appendMessage(reply, 'bot');
+        }, 260);
+    }
+
+    function askQuickQuestion(question) {
+        document.getElementById('chat-input').value = question;
+        sendChatMessage();
+    }
+</script>
+
+</body>
+</html>
