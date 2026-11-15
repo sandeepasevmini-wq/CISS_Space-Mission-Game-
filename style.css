@@ -358,20 +358,6 @@ canvas#spaceCanvas {
     color: #58a6ff;
 }
 
-.hud-spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid #161b22;
-    border-top: 2px solid #58a6ff;
-    border-radius: 50%;
-    animation: spin 1.2s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
 .loader-content h2 {
     color: #c9d1d9;
     font-size: 0.85rem;
